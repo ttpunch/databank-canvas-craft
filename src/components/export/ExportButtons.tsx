@@ -2,10 +2,8 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Download, FileText } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
-import RecordsTableReport from '@/components/records/RecordsTableReport'; // Import RecordsTableReport
-import ReactDOMServer from 'react-dom/server';
+import { jsPDF } from 'jspdf'; // Change to named import
+import autoTable from "jspdf-autotable"; // Import autoTable directly
 
 interface Record {
   id: string;
@@ -15,6 +13,7 @@ interface Record {
   notes_history?: { content: string; timestamp: string; }[]; // New field for notes history
   created_at: string;
   updated_at: string;
+  status?: string; // Add status field
 }
 
 interface ExportButtonsProps {
@@ -34,7 +33,7 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ records }) => {
       return;
     }
 
-    const headers = ['Title', 'Description', 'Category', 'Notes', 'Created At', 'Updated At'];
+    const headers = ['Title', 'Description', 'Category', 'Notes', 'Created At', 'Updated At', 'Status'];
     const csvContent = [
       headers.join(','),
       ...records.map(record => [
@@ -44,7 +43,8 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ records }) => {
         // Join all historical notes for CSV export
         `"${record.notes_history?.map(note => `[${new Date(note.timestamp).toLocaleString()}] ${note.content}`).join(' | ') || ''}"`,
         `"${new Date(record.created_at).toLocaleString()}"`,
-        `"${new Date(record.updated_at).toLocaleString()}"`
+        `"${new Date(record.updated_at).toLocaleString()}"`,
+        `"${record.status || ''}"` // Include status in CSV
       ].join(','))
     ].join('\n');
 
@@ -74,71 +74,82 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ records }) => {
       return;
     }
 
-    const reportTitle = "Data Records Export";
-    const generatedOn = `Generated on: ${new Date().toLocaleString()}`; 
-    const disclaimer = "NOTE: This report shows the full note history.";
-
-    // Render RecordsTableReport component to a string
-    const tableHtmlString = ReactDOMServer.renderToString(
-      <RecordsTableReport records={records} />
-    );
-
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>${reportTitle}</title>
-          <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            h1 { color: #8B5CF6; margin-bottom: 20px; }
-            p { margin-bottom: 10px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 10px; } /* Increased base font size for table */
-            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; vertical-align: top; }
-            th { background-color: #f2f2f2; }
-            .note-history ul { list-style: none; padding: 0; margin: 0; }
-            .note-history li { margin-bottom: 5px; font-size: 9px; } /* Adjusted font size for note history items */
-            .note-history em { font-weight: bold; }
-          </style>
-        </head>
-        <body>
-          <h1>${reportTitle}</h1>
-          <p>${generatedOn}</p>
-          <p style="color: red; font-weight: bold;">${disclaimer}</p>
-          ${tableHtmlString}
-        </body>
-      </html>
-    `;
-
-    const input = document.createElement('div');
-    input.innerHTML = htmlContent;
-    document.body.appendChild(input); // Temporarily add to DOM for html2canvas
-
     try {
-      const canvas = await html2canvas(input, { scale: 2 }); // Scale for better resolution
-      const imgData = canvas.toDataURL('image/png');
-      const pdf = new jsPDF({
+      const doc = new jsPDF({
         orientation: 'portrait',
         unit: 'mm',
         format: 'a4',
       });
+      // applyPlugin(jsPDF); // Apply the plugin to jsPDF
 
-      const imgWidth = 210; // A4 width in mm
-      const pageHeight = 297; // A4 height in mm
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      let heightLeft = imgHeight;
-      let position = 0;
+      let yPos = 10; // Initial Y position
 
-      pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
+      // Title
+      doc.setFontSize(24);
+      doc.setTextColor(139, 92, 246); // Equivalent to #8B5CF6
+      doc.text("Data Records Export", 10, yPos);
+      yPos += 15;
 
-      while (heightLeft >= 0) {
-        position = heightLeft - imgHeight;
-        pdf.addPage();
-        pdf.addImage(imgData, 'PNG', 0, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
+      // Generated On
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0); // Black
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, 10, yPos);
+      yPos += 10;
 
-      pdf.save(`data-records-${new Date().toISOString().split('T')[0]}.pdf`);
+      // Disclaimer
+      doc.setTextColor(255, 0, 0); // Red
+      doc.setFontSize(10);
+      doc.text("NOTE: This report shows the full note history and record status.", 10, yPos);
+      yPos += 10; // Increased spacing for disclaimer
+
+      // Table Headers
+      const headers = [['S.No', 'Title', 'Category', 'Description', 'Created At', 'Last Update', 'Notes History', 'Status']];
+
+      // Table Data
+      const data = records.map((record, index) => [
+        index + 1,
+        record.title,
+        record.category || '-',
+        record.description?.replace(/<[^>]*>/g, '') || '-',
+        new Date(record.created_at).toLocaleDateString(),
+        new Date(record.updated_at).toLocaleDateString(),
+        record.notes_history?.map(note => 
+          `[${new Date(note.timestamp).toLocaleDateString()}] ${note.content}`
+        ).join('\n') || '-',
+        record.status || '-'
+      ]);
+
+      // Remove console logs
+      // console.log("Checking jsPDF doc object before autoTable:", doc);
+      // console.log("Is autoTable a function?", typeof (doc as any).autoTable);
+
+      // Add table to PDF
+      autoTable(doc, {
+        startY: yPos,
+        head: headers,
+        body: data,
+        theme: 'grid',
+        headStyles: { fillColor: [242, 242, 242], textColor: [0, 0, 0], fontSize: 10, fontStyle: 'bold' },
+        bodyStyles: { fontSize: 9 },
+        columnStyles: {
+          0: { cellWidth: 15 }, // S.No
+          1: { cellWidth: 40 }, // Title
+          2: { cellWidth: 25 }, // Category
+          3: { cellWidth: 40 }, // Description
+          4: { cellWidth: 25 }, // Created At
+          5: { cellWidth: 25 }, // Last Update
+          6: { cellWidth: 40 }, // Notes History
+          7: { cellWidth: 20 }, // Status
+        },
+        didDrawPage: function (data: any) {
+          // Footer
+          let str = "Page " + (doc.internal as any).getNumberOfPages()
+          doc.setFontSize(10)
+          doc.text(str, data.settings.margin.left, doc.internal.pageSize.height - 10)
+        },
+      });
+
+      doc.save(`data-records-${new Date().toISOString().split('T')[0]}.pdf`);
 
       toast({
         title: "Export successful",
@@ -150,8 +161,6 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ records }) => {
         description: error.message,
         variant: "destructive",
       });
-    } finally {
-      document.body.removeChild(input); // Clean up temporary element
     }
   };
 

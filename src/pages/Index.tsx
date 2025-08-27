@@ -10,6 +10,7 @@ import { Search, User, Database, Filter, Settings, LogOut } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { motion } from 'framer-motion'; // Import framer-motion
 
 // Components
 import StatsCard from '@/components/dashboard/StatsCard';
@@ -37,6 +38,7 @@ const Index = () => {
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false); // State for reschedule dialog
   const [viewingRecord, setViewingRecord] = useState(null); // State for viewing a record
   const [recordDetailDialogOpen, setRecordDetailDialogOpen] = useState(false); // State for record detail dialog
+  const [isLoadingRecords, setIsLoadingRecords] = useState(true); // New loading state for records
   const [stats, setStats] = useState({
     totalRecords: 0,
     monthlyActivity: 0,
@@ -46,6 +48,7 @@ const Index = () => {
 
   const fetchData = async () => {
     try {
+      setIsLoadingRecords(true); // Set loading to true at the start of fetching
       // Fetch records
       const { data: recordsData, error: recordsError } = await supabase
         .from('records')
@@ -109,6 +112,8 @@ const Index = () => {
         description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsLoadingRecords(false); // Set loading to false when fetching is complete
     }
   }
 
@@ -192,8 +197,9 @@ const Index = () => {
 
   const filteredRecords = records.filter(record =>
     record.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    record.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    record.category?.toLowerCase().includes(searchQuery.toLowerCase())
+    record.description?.replace(/<[^>]*>/g, '').toLowerCase().includes(searchQuery.toLowerCase()) || // Include description with HTML stripped
+    record.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    record.notes_history?.some(note => note.content.toLowerCase().includes(searchQuery.toLowerCase())) // Include notes history
   );
 
   // Redirect to auth if not authenticated
@@ -215,7 +221,12 @@ const Index = () => {
       {/* Header */}
       <header className="border-b bg-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between h-auto sm:h-16 py-3 sm:py-0">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="flex flex-col sm:flex-row items-start sm:items-center justify-between h-auto sm:h-16 py-3 sm:py-0"
+          >
             <div className="flex items-center gap-3 mb-3 sm:mb-0">
               <Database className="h-8 w-8 text-primary" />
               <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
@@ -245,13 +256,18 @@ const Index = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-          </div>
+          </motion.div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search Bar */}
-        <div className="mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.5 }}
+          className="mb-8"
+        >
           <div className="relative w-full max-w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -261,10 +277,15 @@ const Index = () => {
               className="pl-10 w-full"
             />
           </div>
-        </div>
+        </motion.div>
 
         {/* Stats Cards */}
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+          className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8"
+        >
           <StatsCard
             title="Total Records"
             value={stats.totalRecords}
@@ -293,73 +314,109 @@ const Index = () => {
             icon={Settings}
             variant="default"
           />
-        </div>
+        </motion.div>
 
         {/* Main Content */}
-        <Tabs defaultValue="records" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="records">Records</TabsTrigger>
-            <TabsTrigger value="follow-ups">Follow-ups</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger> {/* New tab for reports */}
-          </TabsList>
-          
-          <TabsContent value="records" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Recent Records</h2>
-              {filteredRecords.length > 0 && (
-                <Badge variant="secondary">{filteredRecords.length} records</Badge>
-              )}
-            </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+        >
+          <Tabs defaultValue="records" className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="records">Records</TabsTrigger>
+              <TabsTrigger value="follow-ups">Follow-ups</TabsTrigger>
+              <TabsTrigger value="reports">Reports</TabsTrigger> {/* New tab for reports */}
+            </TabsList>
             
-            <RecordsList 
-              records={filteredRecords}
-              onEdit={handleEditRecord}
-              onDelete={handleDeleteRecord}
-              onViewDetails={handleViewDetails} // Add this prop
-            />
-          </TabsContent>
-          
-          {/* New Tab Content for Reports */}
-          <TabsContent value="reports" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Records Report</h2>
-              {filteredRecords.length > 0 && (
-                <Badge variant="secondary">{filteredRecords.length} records</Badge>
-              )}
-            </div>
-            <RecordsTableReport records={filteredRecords} />
-          </TabsContent>
-
-          <TabsContent value="follow-ups" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Follow-ups</h2>
-              {followUps.length > 0 && (
-                <Badge variant="secondary">{followUps.length} follow-ups</Badge>
-              )}
-            </div>
-            
-            {followUps.length === 0 ? (
-              <Card>
-                <CardContent className="flex flex-col items-center justify-center py-12">
-                  <Settings className="h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold text-muted-foreground">No follow-ups found</h3>
-                  <p className="text-sm text-muted-foreground">Create follow-ups for your records to track progress.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {followUps.map((followUp) => (
-                  <FollowUpCard 
-                    key={followUp.id} 
-                    followUp={followUp} 
-                    onReschedule={handleRescheduleFollowUp} 
-                    onComplete={handleCompleteFollowUp} 
-                  />
-                ))}
+            <TabsContent value="records" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Recent Records</h2>
+                {filteredRecords.length > 0 && (
+                  <Badge variant="secondary">{filteredRecords.length} records</Badge>
+                )}
               </div>
-            )}
-          </TabsContent>
-        </Tabs>
+              
+              {isLoadingRecords ? (
+                <div className="flex justify-center items-center h-40">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
+                  ></motion.div>
+                </div>
+              ) : (
+                <RecordsList 
+                  records={filteredRecords}
+                  onEdit={handleEditRecord}
+                  onDelete={handleDeleteRecord}
+                  onViewDetails={handleViewDetails} // Add this prop
+                />
+              )}
+            </TabsContent>
+            
+            {/* New Tab Content for Reports */}
+            <TabsContent value="reports" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Records Report</h2>
+                {filteredRecords.length > 0 && (
+                  <Badge variant="secondary">{filteredRecords.length} records</Badge>
+                )}
+              </div>
+              {isLoadingRecords ? (
+                <div className="flex justify-center items-center h-40">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
+                  ></motion.div>
+                </div>
+              ) : (
+                <RecordsTableReport records={filteredRecords} />
+              )}
+            </TabsContent>
+
+            <TabsContent value="follow-ups" className="space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Follow-ups</h2>
+                {followUps.length > 0 && (
+                  <Badge variant="secondary">{followUps.length} follow-ups</Badge>
+                )}
+              </div>
+              
+              {isLoadingRecords ? (
+                <div className="flex justify-center items-center h-40">
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"
+                  ></motion.div>
+                </div>
+              ) : (
+                followUps.length === 0 ? (
+                  <Card>
+                    <CardContent className="flex flex-col items-center justify-center py-12">
+                      <Settings className="h-12 w-12 text-muted-foreground mb-4" />
+                      <h3 className="text-lg font-semibold text-muted-foreground">No follow-ups found</h3>
+                      <p className="text-sm text-muted-foreground">Create follow-ups for your records to track progress.</p>
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    {followUps.map((followUp) => (
+                      <FollowUpCard 
+                        key={followUp.id} 
+                        followUp={followUp} 
+                        onReschedule={handleRescheduleFollowUp} 
+                        onComplete={handleCompleteFollowUp} 
+                      />
+                    ))}
+                  </div>
+                )
+              )}
+            </TabsContent>
+          </Tabs>
+        </motion.div>
       </main>
       {/* Edit Record Dialog */}
       <EditRecordDialog

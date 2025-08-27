@@ -10,6 +10,7 @@ interface Record {
   notes_history?: { content: string; timestamp: string; }[]; // Updated to notes_history
   created_at: string;
   updated_at: string;
+  status?: string; // Add status field
 }
 
 interface RecordsTableReportProps {
@@ -34,6 +35,7 @@ const RecordsTableReport: React.FC<RecordsTableReportProps> = ({ records }) => {
             <TableHead>Created At</TableHead>
             <TableHead>Last Update</TableHead>
             <TableHead>Notes History</TableHead> {/* Renamed to Notes History */}
+            <TableHead>Status</TableHead> {/* Add Status column */}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -58,6 +60,7 @@ const RecordsTableReport: React.FC<RecordsTableReportProps> = ({ records }) => {
                   '-'
                 )}
               </TableCell>
+              <TableCell>{record.status || '-'}</TableCell> {/* Display Status */}
             </TableRow>
           ))}
         </TableBody>
