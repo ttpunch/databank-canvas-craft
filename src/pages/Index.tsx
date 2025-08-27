@@ -20,6 +20,7 @@ import ExportButtons from '@/components/export/ExportButtons';
 import RecordsTableReport from '@/components/records/RecordsTableReport'; // Import the new report component
 import FollowUpCard from '@/components/follow-ups/FollowUpCard'; // Import FollowUpCard
 import RescheduleFollowUpDialog from '@/components/follow-ups/RescheduleFollowUpDialog'; // Import RescheduleFollowUpDialog
+import RecordDetailDialog from '@/components/records/RecordDetailDialog'; // Import RecordDetailDialog
 
 const Index = () => {
   const { user, signOut, loading } = useAuth();
@@ -34,6 +35,8 @@ const Index = () => {
   const [overdueFollowUpsCount, setOverdueFollowUpsCount] = useState(0); // New state for overdue count
   const [reschedulingFollowUp, setReschedulingFollowUp] = useState(null); // State for rescheduling
   const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false); // State for reschedule dialog
+  const [viewingRecord, setViewingRecord] = useState(null); // State for viewing a record
+  const [recordDetailDialogOpen, setRecordDetailDialogOpen] = useState(false); // State for record detail dialog
   const [stats, setStats] = useState({
     totalRecords: 0,
     monthlyActivity: 0,
@@ -107,7 +110,7 @@ const Index = () => {
         variant: "destructive",
       });
     }
-  };
+  }
 
   useEffect(() => {
     if (user) {
@@ -121,7 +124,7 @@ const Index = () => {
       title: "Signed out",
       description: "You have been signed out successfully.",
     });
-  };
+  }
 
   const handleDeleteRecord = async (id: string) => {
     try {
@@ -145,12 +148,17 @@ const Index = () => {
         variant: "destructive",
       });
     }
-  };
+  }
 
   const handleEditRecord = (record: any) => {
     setEditingRecord(record);
     setEditDialogOpen(true);
-  };
+  }
+
+  const handleViewDetails = (record: any) => {
+    setViewingRecord(record);
+    setRecordDetailDialogOpen(true);
+  }
 
   // New: Handle completing a follow-up
   const handleCompleteFollowUp = async (id: string) => {
@@ -174,13 +182,13 @@ const Index = () => {
         variant: "destructive",
       });
     }
-  };
+  }
 
   // New: Handle rescheduling a follow-up
   const handleRescheduleFollowUp = (followUp: any) => {
     setReschedulingFollowUp(followUp);
     setRescheduleDialogOpen(true);
-  };
+  }
 
   const filteredRecords = records.filter(record =>
     record.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -307,6 +315,7 @@ const Index = () => {
               records={filteredRecords}
               onEdit={handleEditRecord}
               onDelete={handleDeleteRecord}
+              onViewDetails={handleViewDetails} // Add this prop
             />
           </TabsContent>
           
@@ -350,7 +359,8 @@ const Index = () => {
               </div>
             )}
           </TabsContent>
-   
+        </Tabs>
+      </main>
       {/* Edit Record Dialog */}
       <EditRecordDialog
         record={editingRecord}
@@ -367,8 +377,16 @@ const Index = () => {
         onOpenChange={setRescheduleDialogOpen}
         onFollowUpRescheduled={fetchData}
       />
+
+      {/* Record Detail Dialog */}
+      <RecordDetailDialog
+        record={viewingRecord}
+        open={recordDetailDialogOpen}
+        onOpenChange={setRecordDetailDialogOpen}
+        followUps={followUps}
+      />
     </div>
   );
-};
+}
 
 export default Index;
