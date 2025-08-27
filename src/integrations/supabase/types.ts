@@ -98,7 +98,8 @@ export type Database = {
           created_by: string
           description: string | null
           id: string
-          notes: string | null
+          notes_history: Json
+          notes_legacy: string | null
           title: string
           updated_at: string
         }
@@ -108,7 +109,8 @@ export type Database = {
           created_by?: string
           description?: string | null
           id?: string
-          notes?: string | null
+          notes_history?: Json
+          notes_legacy?: string | null
           title: string
           updated_at?: string
         }
@@ -118,7 +120,8 @@ export type Database = {
           created_by?: string
           description?: string | null
           id?: string
-          notes?: string | null
+          notes_history?: Json
+          notes_legacy?: string | null
           title?: string
           updated_at?: string
         }

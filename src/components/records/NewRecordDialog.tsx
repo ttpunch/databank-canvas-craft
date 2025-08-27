@@ -8,11 +8,25 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Plus } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import NewCategoryDialog from './NewCategoryDialog'; // Import the new component
+import ReactQuill from 'react-quill'; // Import ReactQuill
+import 'react-quill/dist/quill.snow.css'; // Import Quill styles
 
 interface Category {
   id: string;
   name: string;
   color: string;
+}
+
+// Update Record interface to use notes_history
+interface Record {
+  id: string;
+  title: string;
+  description?: string;
+  category?: string;
+  notes_history?: { content: string; timestamp: string; }[]; // New field for notes history
+  created_at: string;
+  updated_at: string;
 }
 
 interface NewRecordDialogProps {
@@ -23,7 +37,10 @@ interface NewRecordDialogProps {
 const NewRecordDialog: React.FC<NewRecordDialogProps> = ({ categories, onRecordCreated }) => {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(undefined);
   const { toast } = useToast();
+  const [currentNote, setCurrentNote] = useState<string>(''); // State for the current note input
+  const [descriptionHtml, setDescriptionHtml] = useState<string>(''); // State for rich text description
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -31,19 +48,28 @@ const NewRecordDialog: React.FC<NewRecordDialogProps> = ({ categories, onRecordC
 
     const formData = new FormData(e.currentTarget);
     const title = formData.get('title') as string;
-    const description = formData.get('description') as string;
-    const category = formData.get('category') as string;
-    const notes = formData.get('notes') as string;
+    const category = selectedCategory;
+    
+    // Prepare notes_history
+    const newNotesHistory = [];
+    if (currentNote.trim()) {
+      newNotesHistory.push({
+        content: currentNote.trim(),
+        timestamp: new Date().toISOString(),
+      });
+    }
 
     try {
       const { error } = await supabase
         .from('records')
-        .insert([{
-          title,
-          description,
-          category,
-          notes,
-        }]);
+        .insert([
+          {
+            title,
+            description: descriptionHtml, // Use rich text description
+            category,
+            notes_history: newNotesHistory, // Use new notes_history
+          },
+        ]);
 
       if (error) throw error;
 
@@ -55,6 +81,9 @@ const NewRecordDialog: React.FC<NewRecordDialogProps> = ({ categories, onRecordC
       setOpen(false);
       onRecordCreated();
       (e.target as HTMLFormElement).reset();
+      setSelectedCategory(undefined);
+      setCurrentNote(''); // Reset current note input
+      setDescriptionHtml(''); // Reset rich text description
     } catch (error: any) {
       toast({
         title: "Error",
@@ -91,34 +120,46 @@ const NewRecordDialog: React.FC<NewRecordDialogProps> = ({ categories, onRecordC
           
           <div className="space-y-2">
             <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              name="description"
-              placeholder="Enter record description"
-              rows={3}
+            <ReactQuill 
+              theme="snow"
+              value={descriptionHtml}
+              onChange={setDescriptionHtml}
+              placeholder="Enter record description (rich text)"
+              className="h-[150px] mb-10"
             />
           </div>
 
           <div className="space-y-2">
             <Label htmlFor="category">Category</Label>
-            <Select name="category">
-              <SelectTrigger>
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {categories.map((category) => (
-                  <SelectItem key={category.id} value={category.name}>
-                    <div className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: category.color }}
-                      />
-                      {category.name}
+            <div className="flex items-center gap-2">
+              <Select name="category" value={selectedCategory} onValueChange={setSelectedCategory}>
+                <SelectTrigger className="flex-grow">
+                  <SelectValue placeholder="Select a category">
+                    {selectedCategory || "Select a category"}
+                  </SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {categories && categories.length > 0 ? (
+                    categories.map((category) => (
+                      <SelectItem key={category.id} value={category.name}>
+                        <div className="flex items-center gap-2">
+                          <div 
+                            className="w-3 h-3 rounded-full" 
+                            style={{ backgroundColor: category.color }}
+                          />
+                          {category.name}
+                        </div>
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="p-2 text-sm text-muted-foreground">
+                      No categories available. Create one first.
                     </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  )}
+                </SelectContent>
+              </Select>
+              <NewCategoryDialog onCategoryCreated={onRecordCreated} />
+            </div>
           </div>
 
           <div className="space-y-2">
@@ -126,13 +167,20 @@ const NewRecordDialog: React.FC<NewRecordDialogProps> = ({ categories, onRecordC
             <Textarea
               id="notes"
               name="notes"
-              placeholder="Additional notes..."
+              placeholder="Add a note..."
               rows={3}
+              value={currentNote}
+              onChange={(e) => setCurrentNote(e.target.value)}
             />
           </div>
 
           <div className="flex justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setOpen(false)}>
+            <Button type="button" variant="outline" onClick={() => {
+              setOpen(false);
+              setSelectedCategory(undefined);
+              setCurrentNote(''); // Reset current note input on cancel
+              setDescriptionHtml(''); // Reset rich text description on cancel
+            }}>
               Cancel
             </Button>
             <Button type="submit" disabled={loading}>

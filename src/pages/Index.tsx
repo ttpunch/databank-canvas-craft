@@ -17,6 +17,9 @@ import NewRecordDialog from '@/components/records/NewRecordDialog';
 import RecordsList from '@/components/records/RecordsList';
 import EditRecordDialog from '@/components/records/EditRecordDialog';
 import ExportButtons from '@/components/export/ExportButtons';
+import RecordsTableReport from '@/components/records/RecordsTableReport'; // Import the new report component
+import FollowUpCard from '@/components/follow-ups/FollowUpCard'; // Import FollowUpCard
+import RescheduleFollowUpDialog from '@/components/follow-ups/RescheduleFollowUpDialog'; // Import RescheduleFollowUpDialog
 
 const Index = () => {
   const { user, signOut, loading } = useAuth();
@@ -28,26 +31,15 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [editingRecord, setEditingRecord] = useState(null);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [overdueFollowUpsCount, setOverdueFollowUpsCount] = useState(0); // New state for overdue count
+  const [reschedulingFollowUp, setReschedulingFollowUp] = useState(null); // State for rescheduling
+  const [rescheduleDialogOpen, setRescheduleDialogOpen] = useState(false); // State for reschedule dialog
   const [stats, setStats] = useState({
     totalRecords: 0,
     monthlyActivity: 0,
     completionRate: 0,
     categoriesCount: 0
   });
-
-  // Redirect to auth if not authenticated
-  if (!user && !loading) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  // Show loading state while checking auth
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
 
   const fetchData = async () => {
     try {
@@ -57,7 +49,10 @@ const Index = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (recordsError) throw recordsError;
+      if (recordsError) {
+        // console.error("Error fetching records:", recordsError);
+        throw recordsError;
+      }
       setRecords(recordsData || []);
 
       // Fetch categories
@@ -65,7 +60,10 @@ const Index = () => {
         .from('categories')
         .select('*');
 
-      if (categoriesError) throw categoriesError;
+      if (categoriesError) {
+        // console.error("Error fetching categories:", categoriesError);
+        throw categoriesError;
+      }
       setCategories(categoriesData || []);
 
       // Fetch follow-ups
@@ -74,11 +72,18 @@ const Index = () => {
         .select('*')
         .order('due_date', { ascending: true });
 
-      if (followUpsError) throw followUpsError;
+      if (followUpsError) {
+        // console.error("Error fetching follow-ups:", followUpsError);
+        throw followUpsError;
+      }
       setFollowUps(followUpsData || []);
 
-      // Calculate stats
+      // Calculate overdue follow-ups
       const now = new Date();
+      const overdue = followUpsData?.filter(f => new Date(f.due_date) < now && f.status === 'pending').length || 0;
+      setOverdueFollowUpsCount(overdue);
+
+      // Calculate stats
       const thisMonth = new Date(now.getFullYear(), now.getMonth(), 1);
       const monthlyRecords = recordsData?.filter(record => 
         new Date(record.created_at) >= thisMonth
@@ -147,32 +152,81 @@ const Index = () => {
     setEditDialogOpen(true);
   };
 
+  // New: Handle completing a follow-up
+  const handleCompleteFollowUp = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('follow_ups')
+        .update({ status: 'completed', updated_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Follow-up completed",
+        description: "The reminder has been marked as completed.",
+      });
+      fetchData(); // Refresh data
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  // New: Handle rescheduling a follow-up
+  const handleRescheduleFollowUp = (followUp: any) => {
+    setReschedulingFollowUp(followUp);
+    setRescheduleDialogOpen(true);
+  };
+
   const filteredRecords = records.filter(record =>
     record.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     record.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     record.category?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Redirect to auth if not authenticated
+  if (!user && !loading) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  // Show loading state while checking auth
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="border-b bg-card">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between h-auto sm:h-16 py-3 sm:py-0">
+            <div className="flex items-center gap-3 mb-3 sm:mb-0">
               <Database className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-bold text-primary">Data Recorder</h1>
+              <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
               <ExportButtons records={filteredRecords} />
               <NewRecordDialog categories={categories} onRecordCreated={fetchData} />
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-2">
+                  <Button variant="ghost" size="sm" className="gap-2 w-full sm:w-auto">
                     <User className="h-4 w-4" />
                     <span className="hidden sm:inline">{user?.email}</span>
+                    {overdueFollowUpsCount > 0 && (
+                      <Badge variant="destructive" className="ml-1 px-2 py-0.5 text-xs rounded-full">
+                        {overdueFollowUpsCount}
+                      </Badge>
+                    )}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -190,19 +244,19 @@ const Index = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search Bar */}
         <div className="mb-8">
-          <div className="relative max-w-md">
+          <div className="relative w-full max-w-full sm:max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search records by title, description, category, or date... (⌘K)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
+              className="pl-10 w-full"
             />
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4 mb-8">
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
           <StatsCard
             title="Total Records"
             value={stats.totalRecords}
@@ -238,6 +292,7 @@ const Index = () => {
           <TabsList>
             <TabsTrigger value="records">Records</TabsTrigger>
             <TabsTrigger value="follow-ups">Follow-ups</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger> {/* New tab for reports */}
           </TabsList>
           
           <TabsContent value="records" className="space-y-6">
@@ -255,6 +310,17 @@ const Index = () => {
             />
           </TabsContent>
           
+          {/* New Tab Content for Reports */}
+          <TabsContent value="reports" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-semibold">Records Report</h2>
+              {filteredRecords.length > 0 && (
+                <Badge variant="secondary">{filteredRecords.length} records</Badge>
+              )}
+            </div>
+            <RecordsTableReport records={filteredRecords} />
+          </TabsContent>
+
           <TabsContent value="follow-ups" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Follow-ups</h2>
@@ -274,34 +340,17 @@ const Index = () => {
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {followUps.map((followUp) => (
-                  <Card key={followUp.id}>
-                    <CardHeader>
-                      <CardTitle className="text-lg">{followUp.title}</CardTitle>
-                      <Badge 
-                        variant={followUp.status === 'completed' ? 'default' : 'secondary'}
-                        className="w-fit"
-                      >
-                        {followUp.status}
-                      </Badge>
-                    </CardHeader>
-                    <CardContent>
-                      {followUp.description && (
-                        <p className="text-sm text-muted-foreground mb-2">{followUp.description}</p>
-                      )}
-                      {followUp.due_date && (
-                        <p className="text-xs text-muted-foreground">
-                          Due: {new Date(followUp.due_date).toLocaleDateString()}
-                        </p>
-                      )}
-                    </CardContent>
-                  </Card>
+                  <FollowUpCard 
+                    key={followUp.id} 
+                    followUp={followUp} 
+                    onReschedule={handleRescheduleFollowUp} 
+                    onComplete={handleCompleteFollowUp} 
+                  />
                 ))}
               </div>
             )}
           </TabsContent>
-        </Tabs>
-      </main>
-
+   
       {/* Edit Record Dialog */}
       <EditRecordDialog
         record={editingRecord}
@@ -309,6 +358,14 @@ const Index = () => {
         open={editDialogOpen}
         onOpenChange={setEditDialogOpen}
         onRecordUpdated={fetchData}
+      />
+
+      {/* Reschedule Follow-up Dialog */}
+      <RescheduleFollowUpDialog
+        followUp={reschedulingFollowUp}
+        open={rescheduleDialogOpen}
+        onOpenChange={setRescheduleDialogOpen}
+        onFollowUpRescheduled={fetchData}
       />
     </div>
   );
