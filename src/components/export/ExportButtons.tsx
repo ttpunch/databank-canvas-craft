@@ -110,7 +110,7 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ records }) => {
         index + 1,
         record.title,
         record.category || '-',
-        record.description?.replace(/<[^>]*>/g, '') || '-',
+        record.description ? record.description.replace(/<p>/g, '\n').replace(/<br>/g, '\n').replace(/<[^>]*>/g, '').trim() : '-',
         new Date(record.created_at).toLocaleDateString(),
         new Date(record.updated_at).toLocaleDateString(),
         record.notes_history?.map(note => 
@@ -136,9 +136,9 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ records }) => {
           1: { cellWidth: 30 }, // Title
           2: { cellWidth: 20 }, // Category
           3: { cellWidth: 95 }, // Description (increased from 43)
-          4: { cellWidth: 18 }, // Created At
-          5: { cellWidth: 18 }, // Last Update
-          6: { cellWidth: 80 }, // Notes History (increased from 55)
+          4: { cellWidth: 22 }, // Created At
+          5: { cellWidth: 22 }, // Last Update
+          6: { cellWidth: 72 }, // Notes History (increased from 55)
         },
         didDrawPage: function (data: any) {
           // Footer
