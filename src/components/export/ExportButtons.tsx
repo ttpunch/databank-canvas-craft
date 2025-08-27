@@ -76,7 +76,7 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ records }) => {
 
     try {
       const doc = new jsPDF({
-        orientation: 'portrait',
+        orientation: 'landscape',
         unit: 'mm',
         format: 'a4',
       });
@@ -103,7 +103,7 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ records }) => {
       yPos += 10; // Increased spacing for disclaimer
 
       // Table Headers
-      const headers = [['S.No', 'Title', 'Category', 'Description', 'Created At', 'Last Update', 'Notes History', 'Status']];
+      const headers = [['S.No', 'Title', 'Category', 'Description', 'Created At', 'Last Update', 'Notes History']];
 
       // Table Data
       const data = records.map((record, index) => [
@@ -116,7 +116,6 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ records }) => {
         record.notes_history?.map(note => 
           `[${new Date(note.timestamp).toLocaleDateString()}] ${note.content}`
         ).join('\n') || '-',
-        record.status || '-'
       ]);
 
       // Remove console logs
@@ -129,17 +128,17 @@ const ExportButtons: React.FC<ExportButtonsProps> = ({ records }) => {
         head: headers,
         body: data,
         theme: 'grid',
+        margin: { right: 10 }, // Adjust overall right margin
         headStyles: { fillColor: [242, 242, 242], textColor: [0, 0, 0], fontSize: 10, fontStyle: 'bold' },
         bodyStyles: { fontSize: 9 },
         columnStyles: {
-          0: { cellWidth: 15 }, // S.No
-          1: { cellWidth: 40 }, // Title
-          2: { cellWidth: 25 }, // Category
-          3: { cellWidth: 40 }, // Description
-          4: { cellWidth: 25 }, // Created At
-          5: { cellWidth: 25 }, // Last Update
-          6: { cellWidth: 40 }, // Notes History
-          7: { cellWidth: 20 }, // Status
+          0: { cellWidth: 10 }, // S.No
+          1: { cellWidth: 30 }, // Title
+          2: { cellWidth: 20 }, // Category
+          3: { cellWidth: 95 }, // Description (increased from 43)
+          4: { cellWidth: 18 }, // Created At
+          5: { cellWidth: 18 }, // Last Update
+          6: { cellWidth: 80 }, // Notes History (increased from 55)
         },
         didDrawPage: function (data: any) {
           // Footer
