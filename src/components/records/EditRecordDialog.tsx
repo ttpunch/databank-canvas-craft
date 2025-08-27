@@ -124,15 +124,17 @@ const EditRecordDialog: React.FC<EditRecordDialogProps> = ({ record, categories,
               />
             </div>
             
-            <div className="space-y-2">
+            <div className="space-y-2 mb-6"> {/* Increased margin to mb-6 */}
               <Label htmlFor="description">Description</Label>
-              <ReactQuill 
-                theme="snow"
-                value={descriptionHtml}
-                onChange={setDescriptionHtml}
-                placeholder="Enter record description (rich text)"
-                className="h-[150px] mb-10"
-              />
+              <div className="min-h-[150px]"> {/* New wrapper div with min-height */}
+                <ReactQuill 
+                  theme="snow"
+                  value={descriptionHtml}
+                  onChange={setDescriptionHtml}
+                  placeholder="Enter record description (rich text)"
+                  className="h-full"
+                />
+              </div>
             </div>
 
             <div className="space-y-2">
