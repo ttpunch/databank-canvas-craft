@@ -4,12 +4,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
-import { Plus, Upload as LucideUpload, FileText, Image as ImageIcon, XCircle, ChevronDown, Check, Search } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Plus, Upload as LucideUpload, FileText, Image as ImageIcon, XCircle, ChevronDown, Check, Search, MoreHorizontal, Edit, Trash } from 'lucide-react';
 import RichTextEditor from '@/components/knowledge-bank/RichTextEditor';
 import { IMAGEKIT_PUBLIC_KEY, IMAGEKIT_URL_ENDPOINT, AUTHENTICATION_ENDPOINT } from '@/integrations/imagekit/client';
 import { useToast } from '@/hooks/use-toast';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { upload as imagekitUpload } from '@imagekit/react'; // Corrected import for upload utility
 import { Copy } from 'lucide-react'; // Import Copy icon
 import { cn } from '../lib/utils'; // Import cn for conditional classnames
@@ -103,6 +110,14 @@ const KnowledgeBank: React.FC = () => {
   const [selectedEntry, setSelectedEntry] = useState<KnowledgeEntry | null>(null);
   const [isEntryDetailDialogOpen, setIsEntryDetailDialogOpen] = useState(false);
   const [isCopied, setIsCopied] = useState(false); // State for copy animation
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingEntry, setEditingEntry] = useState<KnowledgeEntry | null>(null);
+  const [editedTitle, setEditedTitle] = useState('');
+  const [editedContent, setEditedContent] = useState('');
+  const [editedKeywords, setEditedKeywords] = useState('');
+  const [attachmentsToDisplay, setAttachmentsToDisplay] = useState<Attachment[]>([]); // For existing attachments
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState<KnowledgeEntry | null>(null);
 
   const fetchKnowledgeEntries = async () => {
     setLoading(true);
@@ -307,6 +322,190 @@ const KnowledgeBank: React.FC = () => {
     }
   };
 
+  const handleEditEntry = (entry: KnowledgeEntry) => {
+    setEditingEntry(entry);
+    setEditedTitle(entry.title);
+    setEditedContent(entry.content || '');
+    setEditedKeywords(entry.search_keywords || '');
+    setAttachmentsToDisplay(entry.attachments || []);
+    setAttachmentsToUpload([]); // Clear new attachments for edit
+    setIsEditDialogOpen(true);
+  };
+
+  const handleRemoveExistingAttachment = async (attachmentId: string) => {
+    const attachmentToRemove = attachmentsToDisplay.find(att => att.id === attachmentId);
+    if (attachmentToRemove) {
+      const { error: deleteError } = await (supabase as any)
+        .from('attachments')
+        .delete()
+        .eq('id', attachmentId);
+
+      if (deleteError) {
+        console.error('Error deleting attachment from Supabase:', deleteError);
+        toast({
+          title: "Attachment deletion failed",
+          description: `Failed to delete attachment: ${deleteError.message}`,
+          variant: "destructive",
+        });
+      } else {
+        setAttachmentsToDisplay(prev => prev.filter(att => att.id !== attachmentId));
+        toast({
+          title: "Attachment Deleted",
+          description: `Attachment "${attachmentToRemove.file_name}" deleted.`,
+        });
+      }
+    }
+  };
+
+  const handleSaveEditedEntry = async () => {
+    if (!editedTitle.trim()) {
+      alert('Title cannot be empty.');
+      return;
+    }
+
+    const updatedKnowledgeEntry: KnowledgeEntryInsert = {
+      title: editedTitle,
+      content: editedContent,
+      search_keywords: editedKeywords.trim() || null,
+    };
+
+    const { error: updateError } = await (supabase as any)
+      .from('knowledge_entries')
+      .update(updatedKnowledgeEntry)
+      .eq('id', editingEntry?.id);
+
+    if (updateError) {
+      console.error('Error updating knowledge entry:', updateError);
+      setError(updateError.message);
+      toast({
+        title: "Failed to update entry",
+        description: updateError.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Handle attachments for update
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    if (userError || !user) {
+      toast({
+        title: "Authentication Error",
+        description: "Could not get user for attachment saving. Please log in again.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const attachmentsToSave: AttachmentInsert[] = [];
+    for (const file of attachmentsToUpload) {
+      if (file.imageUrl) {
+        attachmentsToSave.push({
+          knowledge_id: editingEntry?.id || '', // Assuming editingEntry.id is available
+          file_url: file.imageUrl,
+          file_name: file.name,
+          mime_type: file.type,
+          description: '',
+          uploaded_by: user.id,
+        });
+      }
+    }
+
+    if (attachmentsToSave.length > 0) {
+      const { error: insertError } = await (supabase as any)
+        .from('attachments')
+        .insert(attachmentsToSave);
+
+      if (insertError) {
+        console.error('Error saving new attachments to Supabase:', insertError);
+        toast({
+          title: "Attachment save failed",
+          description: `Failed to save new attachment metadata: ${insertError.message}`,
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    // Fetch updated attachments for the single edited entry
+    const { data: updatedAttachments, error: fetchAttachmentsError } = await (supabase as any)
+      .from('attachments')
+      .select('*')
+      .eq('knowledge_id', editingEntry?.id);
+ 
+    if (fetchAttachmentsError) {
+      console.error('Error fetching updated attachments:', fetchAttachmentsError);
+      toast({
+        title: "Attachment fetch failed",
+        description: `Failed to fetch updated attachments: ${fetchAttachmentsError.message}`,
+        variant: "destructive",
+      });
+      // Proceed without attachments if there's an error
+    }
+ 
+    setKnowledgeEntries(prevEntries =>
+      prevEntries.map(entry =>
+        entry.id === editingEntry?.id
+          ? { ...entry, ...updatedKnowledgeEntry, attachments: updatedAttachments || [] } // Update attachments as well
+          : entry
+      )
+    );
+ 
+    setIsEditDialogOpen(false);
+    toast({
+      title: "Knowledge Entry Updated",
+      description: "Your knowledge entry and attachments have been updated.",
+    });
+  };
+
+  const handleDeleteEntryConfirmation = (entry: KnowledgeEntry) => {
+    setEntryToDelete(entry);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDeleteEntry = async () => {
+    if (!entryToDelete) return;
+
+    const { error: deleteError } = await (supabase as any)
+      .from('knowledge_entries')
+      .delete()
+      .eq('id', entryToDelete.id);
+
+    if (deleteError) {
+      console.error('Error deleting knowledge entry:', deleteError);
+      setError(deleteError.message);
+      toast({
+        title: "Failed to delete entry",
+        description: deleteError.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Delete associated attachments
+    const { error: deleteAttachmentsError } = await (supabase as any)
+      .from('attachments')
+      .delete()
+      .eq('knowledge_id', entryToDelete.id);
+
+    if (deleteAttachmentsError) {
+      console.error('Error deleting attachments for deleted entry:', deleteAttachmentsError);
+      toast({
+        title: "Failed to delete attachments",
+        description: `Failed to delete attachments for entry "${entryToDelete.title}": ${deleteAttachmentsError.message}`,
+        variant: "destructive",
+      });
+    }
+
+    setKnowledgeEntries(prevEntries =>
+      prevEntries.filter(entry => entry.id !== entryToDelete.id)
+    );
+    setIsDeleteDialogOpen(false);
+    toast({
+      title: "Knowledge Entry Deleted",
+      description: `Knowledge entry "${entryToDelete.title}" has been deleted.`,
+    });
+  };
+
   const filteredKnowledgeEntries = knowledgeEntries.filter(entry => {
     const query = searchQuery.toLowerCase();
     if (!query) return true; // Show all if no search query
@@ -394,7 +593,31 @@ const KnowledgeBank: React.FC = () => {
                 setIsEntryDetailDialogOpen(true);
               }}
             >
-              <h2 className="text-xl font-semibold"><HighlightText text={entry.title} highlight={searchQuery} /></h2>
+              <div className="flex items-center justify-between mb-2">
+                <h2 className="text-xl font-semibold"><HighlightText text={entry.title} highlight={searchQuery} /></h2>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation(); // Prevent opening detail dialog
+                      handleEditEntry(entry);
+                    }}>
+                      <Edit className="mr-2 h-4 w-4" /> Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={(e) => {
+                      e.stopPropagation(); // Prevent opening detail dialog
+                      handleDeleteEntryConfirmation(entry);
+                    }} className="text-destructive">
+                      <Trash className="mr-2 h-4 w-4" /> Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
               <p className="text-sm text-gray-600">Created: {new Date(entry.created_at).toLocaleDateString()}</p>
               {entry.content && (
                 <div className="prose dark:prose-invert mt-2 text-sm line-clamp-3">
@@ -608,6 +831,175 @@ const KnowledgeBank: React.FC = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Edit Entry Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Knowledge Entry</DialogTitle>
+            <DialogDescription>Modify the title, content, or attachments for this knowledge entry.</DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-title" className="text-right">
+                Title
+              </Label>
+              <Input
+                id="edit-title"
+                value={editedTitle}
+                onChange={(e) => setEditedTitle(e.target.value)}
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="edit-content" className="text-right mt-2">
+                Content
+              </Label>
+              <div className="col-span-3">
+                <RichTextEditor
+                  content={editedContent}
+                  onUpdate={setEditedContent}
+                  onInsertImage={handleInsertImageIntoEditor}
+                  onInsertPdf={handleInsertPdfIntoEditor}
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="edit-keywords" className="text-right">
+                Search Keywords
+              </Label>
+              <Input
+                id="edit-keywords"
+                value={editedKeywords}
+                onChange={(e) => setEditedKeywords(e.target.value)}
+                placeholder="Comma-separated keywords for search..."
+                className="col-span-3"
+              />
+            </div>
+            {/* Existing Attachments Display */}
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="existing-attachments" className="text-right mt-2">
+                Existing Attachments
+              </Label>
+              <div className="col-span-3 space-y-2 max-h-40 overflow-y-auto">
+                {attachmentsToDisplay.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">No existing attachments.</p>
+                ) : (
+                  attachmentsToDisplay.map((attachment, index) => (
+                    <div key={attachment.id} className="flex items-center justify-between p-2 border rounded-md text-sm">
+                      <div className="flex items-center gap-2">
+                        {attachment.mime_type?.startsWith('image') ? (
+                          <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <FileText className="h-4 w-4 text-muted-foreground" />
+                        )}
+                        <span>{attachment.file_name}</span>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => handleRemoveExistingAttachment(attachment.id)}
+                      >
+                        <XCircle className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+            {/* File Upload Section for Edit */}
+            <div className="grid grid-cols-4 items-start gap-4">
+              <Label htmlFor="edit-attachments" className="text-right mt-2">
+                New Attachments
+              </Label>
+              <div className="col-span-3 space-y-2">
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                  className="hidden"
+                  multiple
+                  accept="image/*,application/pdf"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full"
+                  disabled={isUploading}
+                >
+                  <LucideUpload className="mr-2 h-4 w-4" /> {isUploading ? 'Uploading...' : 'Select Files'}
+                </Button>
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {attachmentsToUpload.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No new files selected.</p>
+                  ) : (
+                    attachmentsToUpload.map((file, index) => (
+                      <div key={file.name + index} className="flex items-center justify-between p-2 border rounded-md text-sm">
+                        <div className="flex items-center gap-2">
+                          {file.type.startsWith('image') ? (
+                            <ImageIcon className="h-4 w-4 text-muted-foreground" />
+                          ) : (
+                            <FileText className="h-4 w-4 text-muted-foreground" />
+                          )}
+                          <span>{file.name}</span>
+                          {file.imageUrl && <Check className="h-4 w-4 text-green-500" />}
+                        </div>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 w-6 p-0">
+                              <ChevronDown className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {file.imageUrl && file.type.startsWith('image') && (
+                              <DropdownMenuItem onClick={() => handleInsertImageIntoEditor(file.imageUrl!)}>
+                                Insert Image to Editor
+                              </DropdownMenuItem>
+                            )}
+                            {file.imageUrl && file.type === 'application/pdf' && (
+                              <DropdownMenuItem onClick={() => handleInsertPdfIntoEditor(file.imageUrl!)}>
+                                Insert PDF Link to Editor
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onClick={() => handleRemoveAttachment(index)} className="text-destructive">
+                              Remove
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="submit" onClick={handleSaveEditedEntry} disabled={isUploading}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete your knowledge entry
+              "<strong>{entryToDelete?.title}</strong>" and remove its associated data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteEntry} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
