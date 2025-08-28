@@ -1,0 +1,18 @@
+/* src/react-quill-overrides.css */
+.ql-container.ql-snow {
+  height: 200px !important; /* Total height for ReactQuill, including toolbar */
+  max-height: 200px !important;
+}
+
+.ql-toolbar.ql-snow {
+  height: 42px !important; /* Fixed height for the toolbar */
+  margin-top: 0 !important; 
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.ql-editor {
+  height: calc(100% - 42px) !important; /* Remaining height for the editor content area */
+  overflow-y: auto !important; /* Enable vertical scrolling */
+  padding-bottom: 0 !important; /* Remove extra padding at the bottom */
+}

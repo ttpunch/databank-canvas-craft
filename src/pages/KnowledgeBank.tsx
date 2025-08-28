@@ -658,28 +658,24 @@ const KnowledgeBank: React.FC = () => {
 
       {/* New Entry Dialog */}
       <Dialog open={isNewEntryDialogOpen} onOpenChange={setIsNewEntryDialogOpen} >
-        <DialogContent className="sm:max-w-[800px] w-full max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[800px] w-full max-h-[90vh] overflow-y-auto grid gap-4 py-4 grid-cols-4">
+          <DialogHeader className="col-span-4">
             <DialogTitle>Create New Knowledge Entry</DialogTitle>
             <DialogDescription>Add a title, content, and attachments for your new knowledge entry.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-4">
-              <Label htmlFor="title" className="sm:text-right text-left">
+            <Label htmlFor="title" className="col-span-1 text-right">
                 Title
               </Label>
               <Input
                 id="title"
                 value={newEntryTitle}
                 onChange={(e) => setNewEntryTitle(e.target.value)}
-                className="sm:col-span-1 col-span-full"
+                className="col-span-3"
               />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-4">
-              <Label htmlFor="content" className="sm:text-right text-left mt-2">
+            <Label htmlFor="content" className="col-span-1 text-right mt-2">
                 Content
               </Label>
-              <div className="sm:col-span-1 col-span-full">
+              <div className="col-span-3">
                 <RichTextEditor 
                   content={newEntryContent} 
                   onUpdate={setNewEntryContent} 
@@ -687,9 +683,7 @@ const KnowledgeBank: React.FC = () => {
                   onInsertPdf={handleInsertPdfIntoEditor}
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-4">
-              <Label htmlFor="keywords" className="sm:text-right text-left">
+            <Label htmlFor="keywords" className="col-span-1 text-right">
                 Search Keywords
               </Label>
               <Input
@@ -697,15 +691,13 @@ const KnowledgeBank: React.FC = () => {
                 value={newEntryKeywords}
                 onChange={(e) => setNewEntryKeywords(e.target.value)}
                 placeholder="Comma-separated keywords for search..."
-                className="sm:col-span-1 col-span-full"
+                className="col-span-3"
               />
-            </div>
             {/* File Upload Section */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-4">
-              <Label htmlFor="attachments" className="sm:text-right text-left mt-2">
+            <Label htmlFor="attachments" className="col-span-1 text-right mt-2">
                 Attachments
               </Label>
-              <div className="sm:col-span-1 col-span-full space-y-2">
+              <div className="col-span-3 space-y-2">
                 <input 
                   type="file" 
                   ref={fileInputRef} 
@@ -728,7 +720,7 @@ const KnowledgeBank: React.FC = () => {
                   {attachmentsToUpload.length === 0 ? (
                     <p className="text-sm text-muted-foreground">No files selected.</p>
                   ) : (
-                    attachmentsToUpload.map((file, index) => (
+                    attachmentsToUpload.map((file, index) => ( 
                       <div key={file.name + index} className="flex items-center justify-between p-2 border rounded-md text-sm">
                         <div className="flex items-center gap-2">
                           {file.type.startsWith('image') ? (
@@ -766,9 +758,7 @@ const KnowledgeBank: React.FC = () => {
                   )}
                 </div>
               </div>
-            </div>
-          </div>
-          <DialogFooter>
+          <DialogFooter className="col-span-4">
             <Button type="submit" onClick={handleSaveNewEntry} disabled={isUploading}>Save Entry</Button>
           </DialogFooter>
         </DialogContent>
@@ -834,28 +824,24 @@ const KnowledgeBank: React.FC = () => {
 
       {/* Edit Entry Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} >
-        <DialogContent className="sm:max-w-[800px] w-full max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[800px] w-full max-h-[90vh] overflow-y-auto grid gap-4 py-4 grid-cols-4">
+          <DialogHeader className="col-span-4">
             <DialogTitle>Edit Knowledge Entry</DialogTitle>
             <DialogDescription>Modify the title, content, or attachments for this knowledge entry.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-4">
-              <Label htmlFor="edit-title" className="sm:text-right text-left">
+            <Label htmlFor="edit-title" className="col-span-1 text-right">
                 Title
               </Label>
               <Input
                 id="edit-title"
                 value={editedTitle}
                 onChange={(e) => setEditedTitle(e.target.value)}
-                className="sm:col-span-1 col-span-full"
+                className="col-span-3"
               />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-4">
-              <Label htmlFor="edit-content" className="sm:text-right text-left mt-2">
+            <Label htmlFor="edit-content" className="col-span-1 text-right mt-2">
                 Content
               </Label>
-              <div className="sm:col-span-1 col-span-full">
+              <div className="col-span-3">
                 <RichTextEditor
                   content={editedContent}
                   onUpdate={setEditedContent}
@@ -863,9 +849,7 @@ const KnowledgeBank: React.FC = () => {
                   onInsertPdf={handleInsertPdfIntoEditor}
                 />
               </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-4">
-              <Label htmlFor="edit-keywords" className="sm:text-right text-left">
+            <Label htmlFor="edit-keywords" className="col-span-1 text-right">
                 Search Keywords
               </Label>
               <Input
@@ -873,15 +857,13 @@ const KnowledgeBank: React.FC = () => {
                 value={editedKeywords}
                 onChange={(e) => setEditedKeywords(e.target.value)}
                 placeholder="Comma-separated keywords for search..."
-                className="sm:col-span-1 col-span-full"
+                className="col-span-3"
               />
-            </div>
             {/* Existing Attachments Display */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-4">
-              <Label htmlFor="existing-attachments" className="sm:text-right text-left mt-2">
+            <Label htmlFor="existing-attachments" className="col-span-1 text-right mt-2">
                 Existing Attachments
               </Label>
-              <div className="sm:col-span-1 col-span-full space-y-2 max-h-40 overflow-y-auto">
+              <div className="col-span-3 space-y-2 max-h-40 overflow-y-auto">
                 {attachmentsToDisplay.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No existing attachments.</p>
                 ) : (
@@ -908,13 +890,11 @@ const KnowledgeBank: React.FC = () => {
                   ))
                 )}
               </div>
-            </div>
             {/* File Upload Section for Edit */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-4">
-              <Label htmlFor="edit-attachments" className="sm:text-right text-left mt-2">
+            <Label htmlFor="edit-attachments" className="col-span-1 text-right mt-2">
                 New Attachments
               </Label>
-              <div className="sm:col-span-1 col-span-full space-y-2">
+              <div className="col-span-3 space-y-2">
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -974,9 +954,7 @@ const KnowledgeBank: React.FC = () => {
                   )}
                 </div>
               </div>
-            </div>
-          </div>
-          <DialogFooter>
+          <DialogFooter className="col-span-4">
             <Button type="submit" onClick={handleSaveEditedEntry} disabled={isUploading}>Save Changes</Button>
           </DialogFooter>
         </DialogContent>

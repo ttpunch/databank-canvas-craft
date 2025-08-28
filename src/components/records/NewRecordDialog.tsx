@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import NewCategoryDialog from './NewCategoryDialog'; // Import the new component
 import ReactQuill from 'react-quill'; // Import ReactQuill
 import 'react-quill/dist/quill.snow.css'; // Import Quill styles
+import '../../react-quill-overrides.css'; // Import custom ReactQuill overrides
 
 interface Category {
   id: string;
@@ -125,11 +126,11 @@ const NewRecordDialog: React.FC<NewRecordDialogProps> = ({ categories, onRecordC
               value={descriptionHtml}
               onChange={setDescriptionHtml}
               placeholder="Enter record description (rich text)"
-              className="h-[150px] mb-10"
+              className=""
             />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 mt-4">
             <Label htmlFor="category">Category</Label>
             <div className="flex items-center gap-2">
               <Select name="category" value={selectedCategory} onValueChange={setSelectedCategory}>
