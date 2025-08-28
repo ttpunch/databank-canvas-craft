@@ -1,5 +1,6 @@
 {
   "files": [],
+  "include": ["src/**/*.ts", "src/**/*.tsx", "src/**/*.d.ts", "supabase/functions/**/*.ts"], // Include Supabase functions
   "references": [
     { "path": "./tsconfig.app.json" },
     { "path": "./tsconfig.node.json" }
@@ -9,6 +10,8 @@
     "paths": {
       "@/*": ["./src/*"]
     },
+    "lib": ["ESNext", "DOM", "DOM.Iterable"], // Remove deno.ns from libs
+    "types": ["node"], // Remove deno.ns from types
     "noImplicitAny": false,
     "noUnusedParameters": false,
     "skipLibCheck": true,

@@ -10,7 +10,9 @@ import { Search, User, Database, Filter, Settings, LogOut } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { motion } from 'framer-motion'; // Import framer-motion
+import { motion } from 'framer-motion';
+import { BookOpen } from 'lucide-react'; // Import BookOpen icon
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 // Components
 import StatsCard from '@/components/dashboard/StatsCard';
@@ -18,10 +20,10 @@ import NewRecordDialog from '@/components/records/NewRecordDialog';
 import RecordsList from '@/components/records/RecordsList';
 import EditRecordDialog from '@/components/records/EditRecordDialog';
 import ExportButtons from '@/components/export/ExportButtons';
-import RecordsTableReport from '@/components/records/RecordsTableReport'; // Import the new report component
-import FollowUpCard from '@/components/follow-ups/FollowUpCard'; // Import FollowUpCard
-import RescheduleFollowUpDialog from '@/components/follow-ups/RescheduleFollowUpDialog'; // Import RescheduleFollowUpDialog
-import RecordDetailDialog from '@/components/records/RecordDetailDialog'; // Import RecordDetailDialog
+import RecordsTableReport from '@/components/records/RecordsTableReport';
+import FollowUpCard from '@/components/follow-ups/FollowUpCard';
+import RescheduleFollowUpDialog from '@/components/follow-ups/RescheduleFollowUpDialog';
+import RecordDetailDialog from '@/components/records/RecordDetailDialog';
 
 const Index = () => {
   const { user, signOut, loading } = useAuth();
@@ -45,6 +47,8 @@ const Index = () => {
     completionRate: 0,
     categoriesCount: 0
   });
+
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const fetchData = async () => {
     try {
@@ -235,6 +239,10 @@ const Index = () => {
             <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
               <ExportButtons records={filteredRecords} />
               <NewRecordDialog categories={categories} onRecordCreated={fetchData} />
+              <Button variant="outline" onClick={() => navigate('/knowledge-bank')} className="w-full sm:w-auto">
+                <BookOpen className="mr-2 h-4 w-4" />
+                Knowledge Bank
+              </Button>
               
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -326,7 +334,7 @@ const Index = () => {
             <TabsList>
               <TabsTrigger value="records">Records</TabsTrigger>
               <TabsTrigger value="follow-ups">Follow-ups</TabsTrigger>
-              <TabsTrigger value="reports">Reports</TabsTrigger> {/* New tab for reports */}
+              <TabsTrigger value="reports">Reports</TabsTrigger>
             </TabsList>
             
             <TabsContent value="records" className="space-y-6">
@@ -355,7 +363,6 @@ const Index = () => {
               )}
             </TabsContent>
             
-            {/* New Tab Content for Reports */}
             <TabsContent value="reports" className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Records Report</h2>
