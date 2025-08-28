@@ -48,8 +48,8 @@ const StatsCard: React.FC<StatsCardProps> = ({
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
           <div className="space-y-2">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
-            <p className="text-3xl font-bold">{value}</p>
+            <p className="text-lg font-semibold text-foreground">{title}</p>
+            <p className="text-3xl font-bold text-foreground">{value}</p>
             <p className="text-xs text-muted-foreground">{subtitle}</p>
           </div>
           <Icon className={`h-8 w-8 ${getIconStyles()}`} />

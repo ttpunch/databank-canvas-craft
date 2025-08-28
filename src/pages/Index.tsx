@@ -24,6 +24,7 @@ import RecordsTableReport from '@/components/records/RecordsTableReport';
 import FollowUpCard from '@/components/follow-ups/FollowUpCard';
 import RescheduleFollowUpDialog from '@/components/follow-ups/RescheduleFollowUpDialog';
 import RecordDetailDialog from '@/components/records/RecordDetailDialog';
+import { ThemeToggle } from '@/components/ui/ThemeToggle';
 
 const Index = () => {
   const { user, signOut, loading } = useAuth();
@@ -221,9 +222,9 @@ const Index = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="border-b bg-card">
+      <header className="border-b bg-card text-card-foreground">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
@@ -233,20 +234,23 @@ const Index = () => {
           >
             <div className="flex items-center gap-3 mb-3 sm:mb-0">
               <Database className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-bold text-primary">Dashboard</h1>
+              <h1 className="text-2xl font-bold text-primary-foreground">Dashboard</h1>
             </div>
             
-            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-4 w-full sm:w-auto">
-              <ExportButtons records={filteredRecords} />
+            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-4 w-full sm:w-auto ml-auto">
               <NewRecordDialog categories={categories} onRecordCreated={fetchData} />
               <Button variant="outline" onClick={() => navigate('/knowledge-bank')} className="w-full sm:w-auto">
                 <BookOpen className="mr-2 h-4 w-4" />
                 Knowledge Bank
               </Button>
               
+              <ExportButtons records={filteredRecords} />
+             
+              <ThemeToggle />
+             
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-2 w-full sm:w-auto">
+                  <Button variant="ghost" size="sm" className="gap-2 w-full sm:w-auto text-foreground">
                     <User className="h-4 w-4" />
                     <span className="hidden sm:inline">{user?.email}</span>
                     {overdueFollowUpsCount > 0 && (
@@ -258,7 +262,7 @@ const Index = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="h-4 w-4 mr-2" />
+                    <LogOut className="h-4 w-4 mr-2 text-destructive-foreground" />
                     Sign out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -282,7 +286,7 @@ const Index = () => {
               placeholder="Search records by title, description, category, or date... (⌘K)"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 w-full"
+              className="pl-10 w-full bg-input text-input-foreground border-border"
             />
           </div>
         </motion.div>
@@ -341,7 +345,7 @@ const Index = () => {
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Recent Records</h2>
                 {filteredRecords.length > 0 && (
-                  <Badge variant="secondary">{filteredRecords.length} records</Badge>
+                  <Badge variant="secondary" className="bg-secondary text-secondary-foreground">{filteredRecords.length} records</Badge>
                 )}
               </div>
               
@@ -367,7 +371,7 @@ const Index = () => {
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Records Report</h2>
                 {filteredRecords.length > 0 && (
-                  <Badge variant="secondary">{filteredRecords.length} records</Badge>
+                  <Badge variant="secondary" className="bg-secondary text-secondary-foreground">{filteredRecords.length} records</Badge>
                 )}
               </div>
               {isLoadingRecords ? (
@@ -387,7 +391,7 @@ const Index = () => {
               <div className="flex items-center justify-between">
                 <h2 className="text-xl font-semibold">Follow-ups</h2>
                 {followUps.length > 0 && (
-                  <Badge variant="secondary">{followUps.length} follow-ups</Badge>
+                  <Badge variant="secondary" className="bg-secondary text-secondary-foreground">{followUps.length} follow-ups</Badge>
                 )}
               </div>
               
@@ -403,9 +407,9 @@ const Index = () => {
                 followUps.length === 0 ? (
                   <Card>
                     <CardContent className="flex flex-col items-center justify-center py-12">
-                      <Settings className="h-12 w-12 text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-semibold text-muted-foreground">No follow-ups found</h3>
-                      <p className="text-sm text-muted-foreground">Create follow-ups for your records to track progress.</p>
+                      <Settings className="h-12 w-12 text-muted-foreground mb-4 text-muted-foreground" />
+                      <h3 className="text-lg font-semibold text-muted-foreground text-muted-foreground">No follow-ups found</h3>
+                      <p className="text-sm text-muted-foreground text-muted-foreground">Create follow-ups for your records to track progress.</p>
                     </CardContent>
                   </Card>
                 ) : (

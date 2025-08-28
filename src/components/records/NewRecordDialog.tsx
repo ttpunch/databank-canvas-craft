@@ -99,7 +99,7 @@ const NewRecordDialog: React.FC<NewRecordDialogProps> = ({ categories, onRecordC
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="gap-2">
-          <Plus className="h-4 w-4" />
+          <Plus className="h-4 w-4 text-primary-foreground" />
           New Record
         </Button>
       </DialogTrigger>

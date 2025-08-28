@@ -561,9 +561,9 @@ const KnowledgeBank: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Knowledge Bank</h1>
+    <div className="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
+        <h1 className="text-2xl sm:text-3xl font-bold">Knowledge Bank</h1>
         <Button onClick={handleCreateNewEntry}>
           <Plus className="mr-2 h-4 w-4" /> New Entry
         </Button>
@@ -583,18 +583,18 @@ const KnowledgeBank: React.FC = () => {
       {filteredKnowledgeEntries.length === 0 ? (
         <p>No knowledge entries found. Create your first one!</p>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {filteredKnowledgeEntries.map((entry) => (
             <div 
               key={entry.id} 
-              className="p-4 border rounded-lg shadow-sm cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              className="p-4 border bg-card text-card-foreground rounded-lg shadow-sm cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors"
               onClick={() => {
                 setSelectedEntry(entry);
                 setIsEntryDetailDialogOpen(true);
               }}
             >
               <div className="flex items-center justify-between mb-2">
-                <h2 className="text-xl font-semibold"><HighlightText text={entry.title} highlight={searchQuery} /></h2>
+                <h2 className="text-lg sm:text-xl font-semibold text-primary"><HighlightText text={entry.title} highlight={searchQuery} /></h2>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" className="h-8 w-8 p-0">
@@ -627,7 +627,7 @@ const KnowledgeBank: React.FC = () => {
                 </div>
               )}
               {entry.search_keywords && (
-                <p className="text-xs text-muted-foreground mt-1">
+                <p className="text-xs text-secondary-foreground mt-1">
                   Keywords: <HighlightText text={entry.search_keywords} highlight={searchQuery} />
                 </p>
               )}
@@ -657,29 +657,29 @@ const KnowledgeBank: React.FC = () => {
       )}
 
       {/* New Entry Dialog */}
-      <Dialog open={isNewEntryDialogOpen} onOpenChange={setIsNewEntryDialogOpen}>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+      <Dialog open={isNewEntryDialogOpen} onOpenChange={setIsNewEntryDialogOpen} >
+        <DialogContent className="sm:max-w-[800px] w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Create New Knowledge Entry</DialogTitle>
             <DialogDescription>Add a title, content, and attachments for your new knowledge entry.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="title" className="text-right">
+          <div className="grid gap-4 py-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-4">
+              <Label htmlFor="title" className="sm:text-right text-left">
                 Title
               </Label>
               <Input
                 id="title"
                 value={newEntryTitle}
                 onChange={(e) => setNewEntryTitle(e.target.value)}
-                className="col-span-3"
+                className="sm:col-span-1 col-span-full"
               />
             </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="content" className="text-right mt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-4">
+              <Label htmlFor="content" className="sm:text-right text-left mt-2">
                 Content
               </Label>
-              <div className="col-span-3">
+              <div className="sm:col-span-1 col-span-full">
                 <RichTextEditor 
                   content={newEntryContent} 
                   onUpdate={setNewEntryContent} 
@@ -688,8 +688,8 @@ const KnowledgeBank: React.FC = () => {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="keywords" className="text-right">
+            <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-4">
+              <Label htmlFor="keywords" className="sm:text-right text-left">
                 Search Keywords
               </Label>
               <Input
@@ -697,15 +697,15 @@ const KnowledgeBank: React.FC = () => {
                 value={newEntryKeywords}
                 onChange={(e) => setNewEntryKeywords(e.target.value)}
                 placeholder="Comma-separated keywords for search..."
-                className="col-span-3"
+                className="sm:col-span-1 col-span-full"
               />
             </div>
             {/* File Upload Section */}
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="attachments" className="text-right mt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-4">
+              <Label htmlFor="attachments" className="sm:text-right text-left mt-2">
                 Attachments
               </Label>
-              <div className="col-span-3 space-y-2">
+              <div className="sm:col-span-1 col-span-full space-y-2">
                 <input 
                   type="file" 
                   ref={fileInputRef} 
@@ -775,15 +775,15 @@ const KnowledgeBank: React.FC = () => {
       </Dialog>
 
       {/* Entry Detail Dialog */}
-      <Dialog open={isEntryDetailDialogOpen} onOpenChange={setIsEntryDetailDialogOpen}>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto relative pt-6 pr-12">
+      <Dialog open={isEntryDetailDialogOpen} onOpenChange={setIsEntryDetailDialogOpen} >
+        <DialogContent className="sm:max-w-[800px] w-full max-h-[90vh] overflow-y-auto relative pt-6 sm:pr-12 pr-6">
           {selectedEntry?.content && (
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={handleCopyContent} 
               className={cn(
-                "flex-shrink-0 absolute top-4 right-12", // Adjusted right position
+                "flex-shrink-0 absolute top-4 sm:right-12 right-6", // Adjusted right position
                 isCopied && "animate-wiggle"
               )}
             >
@@ -833,29 +833,29 @@ const KnowledgeBank: React.FC = () => {
       </Dialog>
 
       {/* Edit Entry Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-[800px] max-h-[90vh] overflow-y-auto">
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen} >
+        <DialogContent className="sm:max-w-[800px] w-full max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Knowledge Entry</DialogTitle>
             <DialogDescription>Modify the title, content, or attachments for this knowledge entry.</DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-title" className="text-right">
+          <div className="grid gap-4 py-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-4">
+              <Label htmlFor="edit-title" className="sm:text-right text-left">
                 Title
               </Label>
               <Input
                 id="edit-title"
                 value={editedTitle}
                 onChange={(e) => setEditedTitle(e.target.value)}
-                className="col-span-3"
+                className="sm:col-span-1 col-span-full"
               />
             </div>
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="edit-content" className="text-right mt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-4">
+              <Label htmlFor="edit-content" className="sm:text-right text-left mt-2">
                 Content
               </Label>
-              <div className="col-span-3">
+              <div className="sm:col-span-1 col-span-full">
                 <RichTextEditor
                   content={editedContent}
                   onUpdate={setEditedContent}
@@ -864,8 +864,8 @@ const KnowledgeBank: React.FC = () => {
                 />
               </div>
             </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="edit-keywords" className="text-right">
+            <div className="grid grid-cols-1 sm:grid-cols-2 items-center gap-4">
+              <Label htmlFor="edit-keywords" className="sm:text-right text-left">
                 Search Keywords
               </Label>
               <Input
@@ -873,15 +873,15 @@ const KnowledgeBank: React.FC = () => {
                 value={editedKeywords}
                 onChange={(e) => setEditedKeywords(e.target.value)}
                 placeholder="Comma-separated keywords for search..."
-                className="col-span-3"
+                className="sm:col-span-1 col-span-full"
               />
             </div>
             {/* Existing Attachments Display */}
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="existing-attachments" className="text-right mt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-4">
+              <Label htmlFor="existing-attachments" className="sm:text-right text-left mt-2">
                 Existing Attachments
               </Label>
-              <div className="col-span-3 space-y-2 max-h-40 overflow-y-auto">
+              <div className="sm:col-span-1 col-span-full space-y-2 max-h-40 overflow-y-auto">
                 {attachmentsToDisplay.length === 0 ? (
                   <p className="text-sm text-muted-foreground">No existing attachments.</p>
                 ) : (
@@ -910,11 +910,11 @@ const KnowledgeBank: React.FC = () => {
               </div>
             </div>
             {/* File Upload Section for Edit */}
-            <div className="grid grid-cols-4 items-start gap-4">
-              <Label htmlFor="edit-attachments" className="text-right mt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 items-start gap-4">
+              <Label htmlFor="edit-attachments" className="sm:text-right text-left mt-2">
                 New Attachments
               </Label>
-              <div className="col-span-3 space-y-2">
+              <div className="sm:col-span-1 col-span-full space-y-2">
                 <input
                   type="file"
                   ref={fileInputRef}
@@ -984,7 +984,7 @@ const KnowledgeBank: React.FC = () => {
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent className="w-full sm:max-w-[425px]">
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>

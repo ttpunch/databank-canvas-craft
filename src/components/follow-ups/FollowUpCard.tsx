@@ -32,10 +32,10 @@ const FollowUpCard: React.FC<FollowUpCardProps> = ({
   const isCompleted = followUp.status === 'completed';
 
   return (
-    <Card className={`transition-all ${isOverdue ? 'border-destructive shadow-md' : ''} ${isCompleted ? 'opacity-70' : ''}`}>
+    <Card className={`transition-all bg-card text-card-foreground ${isOverdue ? 'border-destructive shadow-md' : ''} ${isCompleted ? 'opacity-70' : ''}`}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <CardTitle className="text-lg leading-tight">{followUp.title}</CardTitle>
+          <CardTitle className="text-lg leading-tight text-foreground">{followUp.title}</CardTitle>
           <Badge 
             variant={isOverdue ? 'destructive' : (isCompleted ? 'default' : 'secondary')}
             className="w-fit"
@@ -46,7 +46,7 @@ const FollowUpCard: React.FC<FollowUpCardProps> = ({
       </CardHeader>
       <CardContent className="space-y-3">
         {followUp.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
+          <p className="text-sm text-muted-foreground line-clamp-2 text-muted-foreground">
             {followUp.description}
           </p>
         )}
