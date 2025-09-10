@@ -2,8 +2,7 @@ declare const Deno: any; // Workaround for Deno types in Supabase Edge Functions
 // Follow this setup guide to integrate the Deno language server with your editor:
 // https://deno.land/manual/getting_started/setup_your_environment
 // This enables autocomplete, go to definition, etc.
-
-// import { createClient } from "npm:@supabase/supabase-js@2"; // Remove unused import
+// import { encode as encodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts"; // Commented out unused import
 
 Deno.serve(async (req) => {
   // This is needed if you're planning to invoke your function from a browser.
@@ -50,18 +49,23 @@ const corsHeaders = {
 };
 
 class ImageKitAuth {
+  static lastStringToSign: string = ""; // Static property to store the last stringToSign
+
   static async getAuthenticationParameters(privateKey: string) {
     const token = Math.random().toString(36).substring(2);
     const expire = Math.floor(Date.now() / 1000) + 1800; // Current Unix epoch in seconds + 30 minutes
     console.log("Edge Function: Token:", token);
     console.log("Edge Function: Expire:", expire);
     const signature = await this.getSignature(token, expire, privateKey);
-    return { token, expire, signature };
+    const parsedSignature = JSON.parse(signature);
+    return { token, expire, signature: parsedSignature.base64Hash, stringToSign: ImageKitAuth.lastStringToSign, privateKeyMasked: privateKey.substring(0, 5) + "...", base64Hash: parsedSignature.base64Hash, rawHashArray: parsedSignature.rawHashArray };
   }
 
   static async getSignature(token: string, expire: number, privateKey: string): Promise<string> {
-    const stringToSign = `${token}${expire}`; // Exclude privateKey from stringToSign
-    console.log("Edge Function: String to Sign:", stringToSign.substring(0, 50) + "...");
+    const stringToSign = `${token}${expire}`;
+    ImageKitAuth.lastStringToSign = stringToSign; // Store for debugging
+    console.log("Edge Function: String to Sign:", stringToSign);
+    console.log("Edge Function: Private Key (in signature function, masked):", privateKey.substring(0, 5) + "...");
     const enc = new TextEncoder();
     const key = await crypto.subtle.importKey(
       "raw",
@@ -76,9 +80,11 @@ class ImageKitAuth {
       enc.encode(stringToSign)
     );
     const hashArray = Array.from(new Uint8Array(signature));
-    // Convert to base64 string instead of hex string
+    console.log("Edge Function: Hash Array (Uint8Array):");
+    // console.log(hashArray); // Log the actual array for debugging if needed
     const base64Hash = btoa(String.fromCharCode(...hashArray));
-    console.log("Edge Function: Generated Signature (Base64):", base64Hash);
-    return base64Hash;
+    console.log("Edge Function: Generated Signature (Base64) with btoa:", base64Hash);
+    // Return both base64Hash and the raw hashArray for debugging
+    return JSON.stringify({ base64Hash, rawHashArray: Array.from(new Uint8Array(signature)) });
   }
 }

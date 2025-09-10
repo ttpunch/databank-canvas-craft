@@ -169,6 +169,7 @@ const KnowledgeBank: React.FC = () => {
           const folderPath = `knowledge-bank/${user.id}`;
 
           // Fetch authentication parameters from our Edge Function
+          console.log("KnowledgeBank: Attempting to fetch ImageKit authentication from:", AUTHENTICATION_ENDPOINT);
           const authResponse = await fetch(AUTHENTICATION_ENDPOINT, {
             method: 'POST',
             headers: {
@@ -766,14 +767,14 @@ const KnowledgeBank: React.FC = () => {
 
       {/* Entry Detail Dialog */}
       <Dialog open={isEntryDetailDialogOpen} onOpenChange={setIsEntryDetailDialogOpen} >
-        <DialogContent className="sm:max-w-[800px] w-full max-h-[90vh] overflow-y-auto relative pt-6 sm:pr-12 pr-6">
+        <DialogContent className="sm:max-w-[800px] w-full max-h-[90vh] overflow-y-auto ">
           {selectedEntry?.content && (
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={handleCopyContent} 
               className={cn(
-                "flex-shrink-0 absolute top-4 sm:right-12 right-6", // Adjusted right position
+                "flex-shrink-0 absolute top-4 right-12", // Adjusted right position
                 isCopied && "animate-wiggle"
               )}
             >
