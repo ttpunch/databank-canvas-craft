@@ -606,7 +606,7 @@ const KnowledgeBank: React.FC = () => {
           {filteredKnowledgeEntries.map((entry) => (
             <div 
               key={entry.id} 
-              className="p-4 border bg-card text-card-foreground rounded-lg shadow-sm cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors"
+              className="p-4 border bg-card text-card-foreground rounded-lg shadow-sm cursor-pointer hover:bg-secondary hover:text-secondary-foreground transition-colors"
               onClick={() => {
                 setSelectedEntry(entry);
                 setIsEntryDetailDialogOpen(true);
