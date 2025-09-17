@@ -92,6 +92,7 @@ const Auth = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <Button variant="link" onClick={() => window.location.href = '/'} className="mb-4">Home</Button>
           <Tabs defaultValue="signin" className="space-y-4">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>

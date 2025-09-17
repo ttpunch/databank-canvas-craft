@@ -238,7 +238,21 @@ const Index = () => {
             </div>
             
             <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-4 w-full sm:w-auto ml-auto">
-              <NewRecordDialog categories={categories} onRecordCreated={fetchData} />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="w-full sm:w-auto">
+                    Actions
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem asChild>
+                    <NewRecordDialog categories={categories} onRecordCreated={fetchData} />
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <ExportButtons records={filteredRecords} />
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button variant="outline" onClick={() => navigate('/knowledge-bank')} className="w-full sm:w-auto">
                 <BookOpen className="mr-2 h-4 w-4" />
                 Knowledge Bank
@@ -247,11 +261,8 @@ const Index = () => {
                 <Wrench className="mr-2 h-4 w-4" />
                 Spare Parts
               </Button>
-              
-              <ExportButtons records={filteredRecords} />
-             
               <ThemeToggle />
-             
+              
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-2 w-full sm:w-auto text-foreground">

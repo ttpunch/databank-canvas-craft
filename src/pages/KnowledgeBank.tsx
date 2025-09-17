@@ -578,9 +578,14 @@ const KnowledgeBank: React.FC = () => {
     <div className="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
       <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
         <h1 className="text-2xl sm:text-3xl font-bold">Knowledge Bank</h1>
-        <Button onClick={handleCreateNewEntry}>
-          <Plus className="mr-2 h-4 w-4" /> New Entry
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={() => window.location.href = '/'} variant="outline">
+            Home
+          </Button>
+          <Button onClick={handleCreateNewEntry}>
+            <Plus className="mr-2 h-4 w-4" /> New Entry
+          </Button>
+        </div>
       </div>
       
       {/* Search Bar */}

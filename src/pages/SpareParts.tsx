@@ -434,6 +434,9 @@ const SpareParts = () => {
               className="max-w-sm"
             />
             <div className="flex">
+              <Button onClick={() => window.location.href = '/'} variant="outline" className="mr-2">
+                Home
+              </Button>
               <input
                 type="file"
                 accept=".xlsx, .xls"
