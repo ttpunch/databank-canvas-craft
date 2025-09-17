@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import KnowledgeBank from "./pages/KnowledgeBank"; // Import the new KnowledgeBank component
+import SpareParts from "./pages/SpareParts"; // Import the new SpareParts component
 
 const queryClient = new QueryClient();
 
@@ -22,6 +23,7 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/knowledge-bank" element={<KnowledgeBank />} /> {/* Add new route */}
+            <Route path="/spare-parts" element={<SpareParts />} /> {/* Add new route */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

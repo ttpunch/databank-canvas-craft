@@ -163,6 +163,18 @@ const KnowledgeBank: React.FC = () => {
         return;
       }
 
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+      if (sessionError || !session) {
+        toast({
+          title: "Authentication Error",
+          description: "Could not get active session for file upload. Please log in again.",
+          variant: "destructive",
+        });
+        setIsUploading(false);
+        return;
+      }
+
       const uploadedFiles: UploadedFileDisplay[] = [];
       for (const file of files) {
         try {
@@ -174,6 +186,7 @@ const KnowledgeBank: React.FC = () => {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
+              'Authorization': `Bearer ${session.access_token}`,
             },
           });
 

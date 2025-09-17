@@ -2,15 +2,21 @@ declare const Deno: any; // Workaround for Deno types in Supabase Edge Functions
 // Follow this setup guide to integrate the Deno language server with your editor:
 // https://deno.land/manual/getting_started/setup_your_environment
 // This enables autocomplete, go to definition, etc.
-// import { encode as encodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts"; // Commented out unused import
+// import { encodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts"; // Removed problematic import
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, Content-Type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS", // Added for CORS preflight
+};
 
 Deno.serve(async (req) => {
+  console.log("Edge Function: Invocation started.", new Date().toISOString());
   // This is needed if you're planning to invoke your function from a browser.
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: {
-      "Access-Control-Allow-Origin": "*",
-      "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, Content-Type",
-    } })
+    console.log("Edge Function: Handling OPTIONS request.");
+    console.log("Edge Function: Sending CORS headers:", corsHeaders);
+    return new Response('ok', { headers: corsHeaders })
   }
 
   try {
@@ -43,11 +49,6 @@ Deno.serve(async (req) => {
   }
 })
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, Content-Type",
-};
-
 class ImageKitAuth {
   static lastStringToSign: string = ""; // Static property to store the last stringToSign
 
@@ -57,11 +58,11 @@ class ImageKitAuth {
     console.log("Edge Function: Token:", token);
     console.log("Edge Function: Expire:", expire);
     const signature = await this.getSignature(token, expire, privateKey);
-    const parsedSignature = JSON.parse(signature);
-    return { token, expire, signature: parsedSignature.base64Hash, stringToSign: ImageKitAuth.lastStringToSign, privateKeyMasked: privateKey.substring(0, 5) + "...", base64Hash: parsedSignature.base64Hash, rawHashArray: parsedSignature.rawHashArray };
+    // The getSignature now returns an object directly, no need for JSON.parse
+    return { token, expire, signature: signature.base64Hash, stringToSign: ImageKitAuth.lastStringToSign, privateKeyMasked: privateKey.substring(0, 5) + "...", base64Hash: signature.base64Hash, rawHashArray: signature.rawHashArray };
   }
 
-  static async getSignature(token: string, expire: number, privateKey: string): Promise<string> {
+  static async getSignature(token: string, expire: number, privateKey: string): Promise<{ base64Hash: string; rawHashArray: number[] }> {
     const stringToSign = `${token}${expire}`;
     ImageKitAuth.lastStringToSign = stringToSign; // Store for debugging
     console.log("Edge Function: String to Sign:", stringToSign);
@@ -82,9 +83,15 @@ class ImageKitAuth {
     const hashArray = Array.from(new Uint8Array(signature));
     console.log("Edge Function: Hash Array (Uint8Array):");
     // console.log(hashArray); // Log the actual array for debugging if needed
-    const base64Hash = btoa(String.fromCharCode(...hashArray));
+    const base64Hash = btoa(String.fromCharCode(...new Uint8Array(signature))); // Direct btoa encoding
     console.log("Edge Function: Generated Signature (Base64) with btoa:", base64Hash);
     // Return both base64Hash and the raw hashArray for debugging
-    return JSON.stringify({ base64Hash, rawHashArray: Array.from(new Uint8Array(signature)) });
+    return { base64Hash, rawHashArray: Array.from(new Uint8Array(signature)) };
+  }
+
+  static base64Encode(input: Uint8Array): string {
+    // Convert Uint8Array to a binary string compatible with btoa
+    const binaryString = String.fromCharCode.apply(null, Array.from(input));
+    return btoa(binaryString);
   }
 }

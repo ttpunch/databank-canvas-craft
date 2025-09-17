@@ -11,7 +11,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
-import { BookOpen } from 'lucide-react'; // Import BookOpen icon
+import { BookOpen, Wrench } from 'lucide-react'; // Import BookOpen and Wrench icons
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 // Components
@@ -242,6 +242,10 @@ const Index = () => {
               <Button variant="outline" onClick={() => navigate('/knowledge-bank')} className="w-full sm:w-auto">
                 <BookOpen className="mr-2 h-4 w-4" />
                 Knowledge Bank
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/spare-parts')} className="w-full sm:w-auto">
+                <Wrench className="mr-2 h-4 w-4" />
+                Spare Parts
               </Button>
               
               <ExportButtons records={filteredRecords} />
