@@ -234,7 +234,7 @@ const Index = () => {
           >
             <div className="flex items-center gap-3 mb-3 sm:mb-0">
               <Database className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-bold text-primary-foreground">Dashboard</h1>
+              <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
             </div>
             
             <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-4 w-full sm:w-auto ml-auto">
@@ -423,8 +423,8 @@ const Index = () => {
                   <Card>
                     <CardContent className="flex flex-col items-center justify-center py-12">
                       <Settings className="h-12 w-12 text-muted-foreground mb-4 text-muted-foreground" />
-                      <h3 className="text-lg font-semibold text-muted-foreground text-muted-foreground">No follow-ups found</h3>
-                      <p className="text-sm text-muted-foreground text-muted-foreground">Create follow-ups for your records to track progress.</p>
+                      <h3 className="text-lg font-semibold text-muted-foreground">No follow-ups found</h3>
+                      <p className="text-sm text-muted-foreground">Create follow-ups for your records to track progress.</p>
                     </CardContent>
                   </Card>
                 ) : (
