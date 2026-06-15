@@ -17,42 +17,32 @@ const StatsCard: React.FC<StatsCardProps> = ({
   icon: Icon,
   variant = 'default'
 }) => {
-  const getVariantStyles = () => {
+  const getIconWrapperStyles = () => {
     switch (variant) {
       case 'success':
-        return 'border-success/20 bg-success/5';
+        return 'bg-success/10 text-success';
       case 'warning':
-        return 'border-warning/20 bg-warning/5';
+        return 'bg-warning/10 text-warning';
       case 'info':
-        return 'border-info/20 bg-info/5';
+        return 'bg-info/10 text-info';
       default:
-        return 'border-border bg-card';
-    }
-  };
-
-  const getIconStyles = () => {
-    switch (variant) {
-      case 'success':
-        return 'text-success';
-      case 'warning':
-        return 'text-warning';
-      case 'info':
-        return 'text-info';
-      default:
-        return 'text-muted-foreground';
+        return 'bg-primary/10 text-primary';
     }
   };
 
   return (
-    <Card className={`transition-all hover:shadow-md ${getVariantStyles()}`}>
+    <Card className="group relative overflow-hidden border-border/60 bg-card transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/0 via-primary to-primary/0 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
       <CardContent className="p-6">
         <div className="flex items-center justify-between">
-          <div className="space-y-2">
-            <p className="text-lg font-semibold text-foreground">{title}</p>
-            <p className="text-3xl font-bold text-foreground">{value}</p>
+          <div className="space-y-1.5">
+            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+            <p className="text-3xl font-bold tracking-tight text-foreground">{value}</p>
             <p className="text-xs text-muted-foreground">{subtitle}</p>
           </div>
-          <Icon className={`h-8 w-8 ${getIconStyles()}`} />
+          <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl ${getIconWrapperStyles()} transition-transform duration-300 group-hover:scale-110`}>
+            <Icon className="h-6 w-6" />
+          </div>
         </div>
       </CardContent>
     </Card>

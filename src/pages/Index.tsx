@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, User, Database, Filter, Settings, LogOut } from 'lucide-react';
+import { Search, User, Database, Filter, Settings, LogOut, Plus } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -224,23 +224,40 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <header className="sticky top-0 z-50 border-b bg-card text-card-foreground">
+      <header className="sticky top-0 z-50 border-b border-border/60 bg-card/80 backdrop-blur-lg supports-[backdrop-filter]:bg-card/60 text-card-foreground">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
-            className="flex flex-col sm:flex-row items-start sm:items-center justify-between h-auto sm:h-16 py-3 sm:py-0"
+            className="flex flex-col sm:flex-row items-start sm:items-center justify-between h-auto sm:h-16 py-3 sm:py-0 gap-3"
           >
-            <div className="flex items-center gap-3 mb-3 sm:mb-0">
-              <Database className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/60 shadow-lg shadow-primary/20">
+                <Database className="h-5 w-5 text-primary-foreground" />
+              </div>
+              <div className="leading-tight">
+                <h1 className="text-xl font-bold tracking-tight text-foreground">Dashboard</h1>
+                <p className="hidden sm:block text-xs text-muted-foreground">Welcome back, {user?.email}</p>
+              </div>
             </div>
-            
-            <div className="flex flex-col sm:flex-row items-end sm:items-center gap-2 sm:gap-4 w-full sm:w-auto ml-auto">
+
+            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+              <Button variant="ghost" size="sm" onClick={() => navigate('/knowledge-bank')} className="gap-2">
+                <BookOpen className="h-4 w-4" />
+                <span className="hidden md:inline">Knowledge Bank</span>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => navigate('/spare-parts')} className="gap-2">
+                <Wrench className="h-4 w-4" />
+                <span className="hidden md:inline">Spare Parts</span>
+              </Button>
+
+              <div className="h-6 w-px bg-border mx-1 hidden sm:block" />
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" className="w-full sm:w-auto">
+                  <Button size="sm" className="gap-2 shadow-sm">
+                    <Plus className="h-4 w-4" />
                     Actions
                   </Button>
                 </DropdownMenuTrigger>
@@ -253,23 +270,18 @@ const Index = () => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              <Button variant="outline" onClick={() => navigate('/knowledge-bank')} className="w-full sm:w-auto">
-                <BookOpen className="mr-2 h-4 w-4" />
-                Knowledge Bank
-              </Button>
-              <Button variant="outline" onClick={() => navigate('/spare-parts')} className="w-full sm:w-auto">
-                <Wrench className="mr-2 h-4 w-4" />
-                Spare Parts
-              </Button>
+
               <ThemeToggle />
-              
+
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-2 w-full sm:w-auto text-foreground">
-                    <User className="h-4 w-4" />
-                    <span className="hidden sm:inline">{user?.email}</span>
+                  <Button variant="ghost" size="sm" className="gap-2 relative text-foreground rounded-full">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
+                      <User className="h-4 w-4" />
+                    </div>
+                    <span className="hidden lg:inline max-w-[160px] truncate">{user?.email}</span>
                     {overdueFollowUpsCount > 0 && (
-                      <Badge variant="destructive" className="ml-1 px-2 py-0.5 text-xs rounded-full">
+                      <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 min-w-5 px-1 text-xs rounded-full flex items-center justify-center">
                         {overdueFollowUpsCount}
                       </Badge>
                     )}
