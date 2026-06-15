@@ -80,19 +80,18 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-muted p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-muted to-primary/10 p-4">
+      <Card className="w-full max-w-md border-border/60 shadow-xl shadow-primary/5 backdrop-blur-sm">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-lg bg-primary">
-            <Database className="h-6 w-6 text-primary-foreground" />
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/60 shadow-lg shadow-primary/30">
+            <Database className="h-7 w-7 text-primary-foreground" />
           </div>
-          <CardTitle className="text-2xl font-bold text-primary">Data Recorder</CardTitle>
+          <CardTitle className="text-2xl font-bold tracking-tight text-foreground">Data Recorder</CardTitle>
           <CardDescription>
             Sign in to your account or create a new one to get started
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button variant="link" onClick={() => window.location.href = '/'} className="mb-4">Home</Button>
           <Tabs defaultValue="signin" className="space-y-4">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="signin">Sign In</TabsTrigger>
