@@ -560,120 +560,159 @@ const KnowledgeBank: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="container mx-auto py-8 text-center">
-        <p>Loading knowledge entries...</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <div className="h-10 w-10 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground">Loading knowledge entries...</p>
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="container mx-auto py-8 text-center text-red-500">
-        <p>Error: {error}</p>
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-6 py-4 text-center text-destructive">
+          <p className="font-medium">Something went wrong</p>
+          <p className="text-sm">{error}</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-6 sm:px-6 lg:px-8">
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
-        <h1 className="text-2xl sm:text-3xl font-bold">Knowledge Bank</h1>
-        <div className="flex items-center gap-2">
-          <Button onClick={() => window.location.href = '/'} variant="outline">
-            Home
-          </Button>
-          <Button onClick={handleCreateNewEntry}>
-            <Plus className="mr-2 h-4 w-4" /> New Entry
-          </Button>
-        </div>
-      </div>
-      
-      {/* Search Bar */}
-      <div className="relative mb-6">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-        <Input
-          placeholder="Search knowledge entries by title, content, or keywords..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10 w-full"
-        />
-      </div>
-
-      {filteredKnowledgeEntries.length === 0 ? (
-        <p>No knowledge entries found. Create your first one!</p>
-      ) : (
-        <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
-          {filteredKnowledgeEntries.map((entry) => (
-            <div 
-              key={entry.id} 
-              className="p-4 border bg-card text-card-foreground rounded-lg shadow-sm cursor-pointer hover:bg-secondary hover:text-secondary-foreground transition-colors"
-              onClick={() => {
-                setSelectedEntry(entry);
-                setIsEntryDetailDialogOpen(true);
-              }}
-            >
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="text-lg sm:text-xl font-semibold text-primary"><HighlightText text={entry.title} highlight={searchQuery} /></h2>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={(e) => {
-                      e.stopPropagation(); // Prevent opening detail dialog
-                      handleEditEntry(entry);
-                    }}>
-                      <Edit className="mr-2 h-4 w-4" /> Edit
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={(e) => {
-                      e.stopPropagation(); // Prevent opening detail dialog
-                      handleDeleteEntryConfirmation(entry);
-                    }} className="text-destructive">
-                      <Trash className="mr-2 h-4 w-4" /> Delete
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
+      <header className="sticky top-0 z-40 border-b border-border/60 bg-card/80 backdrop-blur-lg supports-[backdrop-filter]:bg-card/60">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/60 shadow-lg shadow-primary/20">
+                <BookOpen className="h-5 w-5 text-primary-foreground" />
               </div>
-              <p className="text-sm text-gray-600">Created: {new Date(entry.created_at).toLocaleDateString()}</p>
-              {entry.content && (
-                <div className="prose dark:prose-invert mt-2 text-sm line-clamp-3">
-                  {/* Render HTML content directly */} 
-                  <div dangerouslySetInnerHTML={{ __html: entry.content as string }} />
-                  {/* <HighlightText text={entry.content as string} highlight={searchQuery} /> */}
-                </div>
-              )}
-              {entry.search_keywords && (
-                <p className="text-xs text-secondary-foreground mt-1">
-                  Keywords: <HighlightText text={entry.search_keywords} highlight={searchQuery} />
+              <div className="leading-tight">
+                <h1 className="text-xl font-bold tracking-tight text-foreground">Knowledge Bank</h1>
+                <p className="text-xs text-muted-foreground">
+                  {filteredKnowledgeEntries.length} {filteredKnowledgeEntries.length === 1 ? 'entry' : 'entries'}
                 </p>
-              )}
-              {entry.attachments && entry.attachments.length > 0 && (
-                <div className="mt-2 space-y-1">
-                  <p className="text-sm font-semibold">Attachments:</p>
-                  {entry.attachments.map((attachment) => (
-                    <div key={attachment.id} className="flex items-center gap-2 text-xs text-muted-foreground">
-                      {attachment.mime_type?.startsWith('image') ? (
-                        <ImageIcon className="h-3 w-3" />
-                      ) : (
-                        <FileText className="h-3 w-3" />
-                      )}
-                      <a href={attachment.file_url} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                        <HighlightText text={attachment.file_name} highlight={searchQuery} />
-                      </a>
-                      {attachment.description && (
-                        <span className="ml-1 italic">- <HighlightText text={attachment.description} highlight={searchQuery} /></span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
+              </div>
             </div>
-          ))}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <Button onClick={() => window.location.href = '/'} variant="ghost" size="sm">
+                Home
+              </Button>
+              <Button onClick={handleCreateNewEntry} size="sm" className="gap-2 shadow-sm">
+                <Plus className="h-4 w-4" /> New Entry
+              </Button>
+            </div>
+          </div>
         </div>
-      )}
+      </header>
+
+      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        {/* Search Bar */}
+        <div className="relative mb-6 max-w-xl">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search knowledge entries by title, content, or keywords..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 w-full bg-card"
+          />
+        </div>
+
+        {filteredKnowledgeEntries.length === 0 ? (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-card/50 py-16 text-center">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 mb-4">
+              <BookOpen className="h-7 w-7 text-primary" />
+            </div>
+            <h3 className="text-lg font-semibold text-foreground">No knowledge entries yet</h3>
+            <p className="text-sm text-muted-foreground mt-1 mb-4">Create your first entry to start building your knowledge base.</p>
+            <Button onClick={handleCreateNewEntry} className="gap-2">
+              <Plus className="h-4 w-4" /> New Entry
+            </Button>
+          </div>
+        ) : (
+          <div className="grid gap-4 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+            {filteredKnowledgeEntries.map((entry) => (
+              <div
+                key={entry.id}
+                className="group relative flex flex-col p-5 border border-border/60 bg-card text-card-foreground rounded-2xl shadow-sm cursor-pointer transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/30"
+                onClick={() => {
+                  setSelectedEntry(entry);
+                  setIsEntryDetailDialogOpen(true);
+                }}
+              >
+                <div className="flex items-start justify-between gap-2 mb-1">
+                  <h2 className="text-lg font-semibold text-foreground leading-snug"><HighlightText text={entry.title} highlight={searchQuery} /></h2>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()}>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={(e) => {
+                        e.stopPropagation(); // Prevent opening detail dialog
+                        handleEditEntry(entry);
+                      }}>
+                        <Edit className="mr-2 h-4 w-4" /> Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem onClick={(e) => {
+                        e.stopPropagation(); // Prevent opening detail dialog
+                        handleDeleteEntryConfirmation(entry);
+                      }} className="text-destructive">
+                        <Trash className="mr-2 h-4 w-4" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+                <p className="text-xs text-muted-foreground mb-2">{new Date(entry.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}</p>
+                {entry.content && (
+                  <div className="prose dark:prose-invert prose-sm mt-1 text-sm text-muted-foreground line-clamp-3">
+                    <div dangerouslySetInnerHTML={{ __html: entry.content as string }} />
+                  </div>
+                )}
+                {entry.search_keywords && (
+                  <div className="flex flex-wrap gap-1.5 mt-3">
+                    {entry.search_keywords.split(',').map((kw, i) => kw.trim() && (
+                      <span key={i} className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                        <HighlightText text={kw.trim()} highlight={searchQuery} />
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {entry.attachments && entry.attachments.length > 0 && (
+                  <div className="mt-3 pt-3 border-t border-border/60 space-y-1.5">
+                    {entry.attachments.map((attachment) => (
+                      <a
+                        key={attachment.id}
+                        href={attachment.file_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="flex items-center gap-2 text-xs text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {attachment.mime_type?.startsWith('image') ? (
+                          <ImageIcon className="h-3.5 w-3.5 shrink-0" />
+                        ) : (
+                          <FileText className="h-3.5 w-3.5 shrink-0" />
+                        )}
+                        <span className="truncate hover:underline">
+                          <HighlightText text={attachment.file_name} highlight={searchQuery} />
+                        </span>
+                        {attachment.description && (
+                          <span className="italic truncate">- <HighlightText text={attachment.description} highlight={searchQuery} /></span>
+                        )}
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </main>
 
       {/* New Entry Dialog */}
       <Dialog open={isNewEntryDialogOpen} onOpenChange={setIsNewEntryDialogOpen} >
@@ -740,7 +779,7 @@ const KnowledgeBank: React.FC = () => {
                     <p className="text-sm text-muted-foreground">No files selected.</p>
                   ) : (
                     attachmentsToUpload.map((file, index) => ( 
-                      <div key={file.name + index} className="flex items-center justify-between p-2 border rounded-md text-sm">
+                      <div key={file.name + index} className="flex items-center justify-between p-2 border border-border/60 bg-muted/30 rounded-lg text-sm">
                         <div className="flex items-center gap-2">
                           {file.type.startsWith('image') ? (
                             <ImageIcon className="h-4 w-4 text-muted-foreground" />
@@ -810,27 +849,35 @@ const KnowledgeBank: React.FC = () => {
               <div className="prose dark:prose-invert mb-4" dangerouslySetInnerHTML={{ __html: selectedEntry.content as string }} />
             )}
             {selectedEntry?.search_keywords && (
-              <p className="text-sm text-muted-foreground mb-4">
-                Keywords: {selectedEntry.search_keywords}
-              </p>
+              <div className="flex flex-wrap gap-1.5 mb-4">
+                {selectedEntry.search_keywords.split(',').map((kw, i) => kw.trim() && (
+                  <span key={i} className="inline-flex items-center rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                    {kw.trim()}
+                  </span>
+                ))}
+              </div>
             )}
             {selectedEntry?.attachments && selectedEntry.attachments.length > 0 && (
-              <div className="mt-4 space-y-2">
-                <p className="text-sm font-semibold">Attachments:</p>
+              <div className="mt-4 pt-4 border-t border-border/60 space-y-2">
+                <p className="text-sm font-semibold text-foreground">Attachments</p>
                 {selectedEntry.attachments.map((attachment) => (
-                  <div key={attachment.id} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <a
+                    key={attachment.id}
+                    href={attachment.file_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors p-2 rounded-lg hover:bg-muted/50 -mx-2"
+                  >
                     {attachment.mime_type?.startsWith('image') ? (
-                      <ImageIcon className="h-4 w-4" />
+                      <ImageIcon className="h-4 w-4 shrink-0" />
                     ) : (
-                      <FileText className="h-4 w-4" />
+                      <FileText className="h-4 w-4 shrink-0" />
                     )}
-                    <a href={attachment.file_url} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                      {attachment.file_name}
-                    </a>
+                    <span className="hover:underline truncate">{attachment.file_name}</span>
                     {attachment.description && (
-                      <span className="ml-1 italic">- {attachment.description}</span>
+                      <span className="ml-1 italic truncate">- {attachment.description}</span>
                     )}
-                  </div>
+                  </a>
                 ))}
               </div>
             )}
@@ -936,7 +983,7 @@ const KnowledgeBank: React.FC = () => {
                     <p className="text-sm text-muted-foreground">No new files selected.</p>
                   ) : (
                     attachmentsToUpload.map((file, index) => (
-                      <div key={file.name + index} className="flex items-center justify-between p-2 border rounded-md text-sm">
+                      <div key={file.name + index} className="flex items-center justify-between p-2 border border-border/60 bg-muted/30 rounded-lg text-sm">
                         <div className="flex items-center gap-2">
                           {file.type.startsWith('image') ? (
                             <ImageIcon className="h-4 w-4 text-muted-foreground" />
