@@ -1,166 +1,180 @@
-import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-serve(async (req) => {
-  // Handle CORS preflight request
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+const MAX_ROWS = 5000;
+const MAX_COLUMNS = 50;
+
+const RESERVED_COLUMNS: Record<string, string> = {
+  id: "uuid PRIMARY KEY DEFAULT gen_random_uuid()",
+  quantity: "integer",
+  stock_quantity: "integer",
+  min_stock_level: "integer",
+  usage_count: "integer",
+  lead_time: "integer",
+  unit_cost: "numeric",
+  last_replaced_date: "timestamp with time zone DEFAULT now()",
+  last_used_at: "timestamp with time zone DEFAULT now()",
+  created_at: "timestamp with time zone DEFAULT now()",
+  updated_at: "timestamp with time zone DEFAULT now()",
+};
+
+const IDENTIFIER_PATTERN = /^[a-z][a-z0-9_]{0,62}$/;
+
+function jsonResponse(body: unknown, status: number) {
+  return new Response(JSON.stringify(body), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status,
+  });
+}
+
+function sanitizeIdentifier(raw: string, fallbackPrefix: string, index: number): string {
+  let sanitized = raw
+    .toLowerCase()
+    .replace(/[^a-z0-9_]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+
+  if (!sanitized || !/^[a-z]/.test(sanitized)) {
+    sanitized = `${fallbackPrefix}_${index}${sanitized ? `_${sanitized}` : ""}`;
+  }
+
+  sanitized = sanitized.slice(0, 63);
+
+  if (!IDENTIFIER_PATTERN.test(sanitized)) {
+    sanitized = `${fallbackPrefix}_${index}`;
+  }
+
+  return sanitized;
+}
+
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
-    return new Response("ok", {
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-        "Access-Control-Allow-Methods": "POST",
-      },
-    });
+    return new Response("ok", { headers: corsHeaders });
   }
 
   if (req.method !== "POST") {
-    return new Response(JSON.stringify({ error: "Method Not Allowed" }), {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*", // Include CORS header for actual requests as well
-      },
-      status: 405,
-    });
+    return jsonResponse({ error: "Method Not Allowed" }, 405);
+  }
+
+  // Require an authenticated user. The anon key alone is not sufficient.
+  const authHeader = req.headers.get("Authorization") ?? "";
+  if (!authHeader.toLowerCase().startsWith("bearer ")) {
+    return jsonResponse({ error: "Missing or invalid Authorization header." }, 401);
+  }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY") ?? "";
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
+
+  // Verify the caller's JWT against the anon-key client before doing anything privileged.
+  const authClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: userData, error: userError } = await authClient.auth.getUser();
+  if (userError || !userData?.user) {
+    return jsonResponse({ error: "Unauthorized." }, 401);
   }
 
   try {
     const { sheetDisplayName, jsonData } = await req.json();
 
-    if (!sheetDisplayName || !jsonData || !Array.isArray(jsonData) || jsonData.length === 0) {
-      return new Response(JSON.stringify({ error: "Invalid input: sheetDisplayName and jsonData (array with content) are required." }), {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        status: 400,
-      });
+    if (
+      typeof sheetDisplayName !== "string" ||
+      !sheetDisplayName.trim() ||
+      !Array.isArray(jsonData) ||
+      jsonData.length === 0
+    ) {
+      return jsonResponse(
+        { error: "Invalid input: sheetDisplayName and jsonData (non-empty array) are required." },
+        400,
+      );
     }
 
-    const supabase = createClient(
-      Deno.env.get("SUPABASE_URL") ?? "",
-      // Use the service_role key for operations that require elevated privileges
-      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
-      {
-        auth: {
-          persistSession: false,
-        },
-      },
-    );
+    if (jsonData.length > MAX_ROWS) {
+      return jsonResponse({ error: `Too many rows. Maximum is ${MAX_ROWS}.` }, 400);
+    }
 
-    // Generate a safe table name
-    const baseTableName = sheetDisplayName.toLowerCase().replace(/[^a-z0-9_]/g, "_").replace(/__+/g, "_");
-    let tableName = baseTableName;
-    let counter = 0;
-    
-    // Check for existing table names and append a counter if necessary
-    // This is a basic check; for production, a more robust uniqueness check might be needed
-    // This check is omitted for brevity and will rely on the `UNIQUE` constraint in `uploaded_spare_parts_sheets`
-    // const { data: existingTables } = await supabase.from('uploaded_spare_parts_sheets').select('table_name').eq('table_name', tableName);
-    // while (existingTables && existingTables.length > 0) {
-    //   counter++;
-    //   tableName = `${baseTableName}_${counter}`;
-    //   const { data: newCheck } = await supabase.from('uploaded_spare_parts_sheets').select('table_name').eq('table_name', tableName);
-    //   existingTables = newCheck;
-    // }
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: { persistSession: false },
+    });
 
+    const tableName = sanitizeIdentifier(sheetDisplayName, "sheet", Date.now() % 100000);
 
-    // Infer schema from the first row of JSON data
     const firstRow = jsonData[0];
-    const columns: string[] = [];
-    const coreColumns = [
-      "id", "name", "description", "quantity", "category", 
-      "part_id", "location", "supplier", "part_number", "manufacturer", 
-      "machine_model", "part_category", "stock_quantity", "min_stock_level", 
-      "unit_cost", "lead_time", "last_replaced_date", "last_used_at", "usage_count",
-      "created_at", "updated_at"
-    ];
+    if (typeof firstRow !== "object" || firstRow === null || Array.isArray(firstRow)) {
+      return jsonResponse({ error: "Each row in jsonData must be an object." }, 400);
+    }
 
-    for (const key in firstRow) {
-      if (Object.prototype.hasOwnProperty.call(firstRow, key)) {
-        const sanitizedKey = key.toLowerCase().replace(/[^a-z0-9_]/g, "_");
-        let columnType = "text"; // Default to text
+    const sourceKeys = Object.keys(firstRow);
+    if (sourceKeys.length === 0) {
+      return jsonResponse({ error: "jsonData rows must contain at least one column." }, 400);
+    }
+    if (sourceKeys.length > MAX_COLUMNS) {
+      return jsonResponse({ error: `Too many columns. Maximum is ${MAX_COLUMNS}.` }, 400);
+    }
 
-        if (coreColumns.includes(sanitizedKey)) {
-          // If it's a known core column, use specific types
-          switch (sanitizedKey) {
-            case "id": columnType = "uuid PRIMARY KEY DEFAULT gen_random_uuid()"; break;
-            case "quantity":
-            case "stock_quantity":
-            case "min_stock_level":
-            case "usage_count":
-            case "lead_time":
-              columnType = "integer";
-              break;
-            case "unit_cost":
-              columnType = "numeric";
-              break;
-            case "last_replaced_date":
-            case "last_used_at":
-            case "created_at":
-            case "updated_at":
-              columnType = "timestamp with time zone DEFAULT now()";
-              break;
-            default:
-              columnType = "text"; // name, description, category, etc.
-          }
-        } else {
-          // For unknown columns, try to infer type from value
-          const value = firstRow[key];
-          if (typeof value === "number") {
-            columnType = "numeric";
-          } else if (typeof value === "boolean") {
-            columnType = "boolean";
-          } else if (typeof value === "string" && !isNaN(Date.parse(value))) {
-            columnType = "timestamp with time zone";
-          }
-        }
-        
-        // Add a primary key if 'id' is not present
-        if (sanitizedKey === "id" && columnType.includes("PRIMARY KEY")) {
-            columns.push(`${sanitizedKey} ${columnType}`);
-        } else if (sanitizedKey === "id") { // If 'id' is present but not primary key, make it text
-            columns.push(`${sanitizedKey} text`);
-        } else {
-            columns.push(`${sanitizedKey} ${columnType}`);
-        }
+    // Map original keys -> sanitized, deduplicated column names.
+    const keyToColumn = new Map<string, string>();
+    const usedColumns = new Set<string>();
+    sourceKeys.forEach((key, index) => {
+      let column = sanitizeIdentifier(key, "col", index);
+      while (usedColumns.has(column)) {
+        column = `${column}_${index}`;
       }
-    }
-    
-    // Ensure 'id' column exists as primary key
-    if (!columns.some(col => col.includes("id") && col.includes("PRIMARY KEY"))) {
-      columns.unshift("id uuid PRIMARY KEY DEFAULT gen_random_uuid()");
-    }
-    // Ensure 'created_at' and 'updated_at' columns exist
-    if (!columns.some(col => col.includes("created_at"))) {
-      columns.push("created_at timestamp with time zone DEFAULT now()");
-    }
-    if (!columns.some(col => col.includes("updated_at"))) {
-      columns.push("updated_at timestamp with time zone DEFAULT now()");
+      usedColumns.add(column);
+      keyToColumn.set(key, column);
+    });
+
+    const columnDefs: string[] = [];
+    for (const column of usedColumns) {
+      if (RESERVED_COLUMNS[column]) {
+        columnDefs.push(`"${column}" ${RESERVED_COLUMNS[column]}`);
+        continue;
+      }
+
+      const value = firstRow[[...keyToColumn.entries()].find(([, c]) => c === column)![0]];
+      let columnType = "text";
+      if (typeof value === "number") columnType = "numeric";
+      else if (typeof value === "boolean") columnType = "boolean";
+
+      columnDefs.push(`"${column}" ${columnType}`);
     }
 
+    if (!usedColumns.has("id")) {
+      columnDefs.unshift(`"id" ${RESERVED_COLUMNS.id}`);
+    }
+    if (!usedColumns.has("created_at")) {
+      columnDefs.push(`"created_at" ${RESERVED_COLUMNS.created_at}`);
+    }
+    if (!usedColumns.has("updated_at")) {
+      columnDefs.push(`"updated_at" ${RESERVED_COLUMNS.updated_at}`);
+    }
 
-    const createTableQuery = `CREATE TABLE public.${tableName} (${columns.join(", ")});`;
+    const createTableQuery = `CREATE TABLE public."${tableName}" (${columnDefs.join(", ")});`;
 
-    const { error: createTableError } = await supabase.rpc('execute_sql', { sql_query: createTableQuery });
+    const { error: createTableError } = await supabase.rpc("execute_ddl", {
+      ddl_statement: createTableQuery,
+      expected_table: tableName,
+    });
 
     if (createTableError) {
-        console.error("Error creating table:", createTableError);
-        return new Response(JSON.stringify({ error: "Failed to create table in Supabase.", details: createTableError.message }), {
-            headers: {
-              "Content-Type": "application/json",
-              "Access-Control-Allow-Origin": "*",
-            },
-            status: 500,
-        });
+      console.error("Error creating table:", createTableError);
+      return jsonResponse(
+        { error: "Failed to create table in Supabase.", details: createTableError.message },
+        500,
+      );
     }
 
-    // Prepare data for insertion
-    const insertionData = jsonData.map((row: Record<string, any>) => {
-      const newRow: Record<string, any> = {};
-      for (const key in row) {
+    const insertionData = jsonData.map((row: Record<string, unknown>) => {
+      const newRow: Record<string, unknown> = {};
+      for (const [key, column] of keyToColumn.entries()) {
         if (Object.prototype.hasOwnProperty.call(row, key)) {
-          const sanitizedKey = key.toLowerCase().replace(/[^a-z0-9_]/g, "_");
-          newRow[sanitizedKey] = row[key];
+          newRow[column] = row[key];
         }
       }
       return newRow;
@@ -170,50 +184,36 @@ serve(async (req) => {
 
     if (insertDataError) {
       console.error("Error inserting data:", insertDataError);
-      // Attempt to clean up the partially created table
-      await supabase.rpc('execute_sql', { sql_query: `DROP TABLE public.${tableName};` }).catch(console.error);
-      return new Response(JSON.stringify({ error: "Failed to insert data into new table.", details: insertDataError.message }), {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        status: 500,
-      });
+      await supabase
+        .rpc("execute_ddl", { ddl_statement: `DROP TABLE IF EXISTS public."${tableName}";`, expected_table: tableName })
+        .catch((e: unknown) => console.error("Cleanup failed:", e));
+      return jsonResponse(
+        { error: "Failed to insert data into new table.", details: insertDataError.message },
+        500,
+      );
     }
 
-    // Record the new sheet in the metadata table
     const { error: metadataError } = await supabase
       .from("uploaded_spare_parts_sheets")
-      .insert({ display_name: sheetDisplayName, table_name: tableName });
+      .insert({ display_name: sheetDisplayName, table_name: tableName, created_by: userData.user.id });
 
     if (metadataError) {
       console.error("Error saving sheet metadata:", metadataError);
-      // Attempt to clean up the partially created table and data
-      await supabase.rpc('execute_sql', { sql_query: `DROP TABLE public.${tableName};` }).catch(console.error);
-      return new Response(JSON.stringify({ error: "Failed to save sheet metadata.", details: metadataError.message }), {
-        headers: {
-          "Content-Type": "application/json",
-          "Access-Control-Allow-Origin": "*",
-        },
-        status: 500,
-      });
+      await supabase
+        .rpc("execute_ddl", { ddl_statement: `DROP TABLE IF EXISTS public."${tableName}";`, expected_table: tableName })
+        .catch((e: unknown) => console.error("Cleanup failed:", e));
+      return jsonResponse(
+        { error: "Failed to save sheet metadata.", details: metadataError.message },
+        500,
+      );
     }
 
-    return new Response(JSON.stringify({ message: "Spare parts list created and data imported successfully.", tableName: tableName }), {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      status: 200,
-    });
-  } catch (error) {
+    return jsonResponse(
+      { message: "Spare parts list created and data imported successfully.", tableName },
+      200,
+    );
+  } catch (error: any) {
     console.error("Unexpected error:", error);
-    return new Response(JSON.stringify({ error: "An unexpected error occurred.", details: error.message }), {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
-      status: 500,
-    });
+    return jsonResponse({ error: "An unexpected error occurred." }, 500);
   }
 });
