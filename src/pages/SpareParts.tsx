@@ -271,27 +271,31 @@ const SpareParts = () => {
       return;
     }
 
+    // PostgREST builds DELETE filters into the URL. Large `in.(...)` lists
+    // overflow the URL limit and return 400, so we delete in batches.
+    const BATCH_SIZE = 50;
     try {
-      const { error } = await supabase
-        .from('spare_parts')
-        .delete()
-        .in('id', selectedPartIds);
-
-      if (error) {
-        throw error;
+      for (let i = 0; i < selectedPartIds.length; i += BATCH_SIZE) {
+        const batch = selectedPartIds.slice(i, i + BATCH_SIZE);
+        const { error } = await supabase
+          .from('spare_parts')
+          .delete()
+          .in('id', batch);
+        if (error) throw error;
       }
       toast({
         title: "Bulk Deletion Successful",
         description: `${selectedPartIds.length} spare parts have been successfully deleted.`,
       });
-      setSelectedPartIds([]); // Clear selection after deletion
-      fetchSpareParts(); // Re-fetch data to update the table
+      setSelectedPartIds([]);
+      fetchSpareParts();
     } catch (err: any) {
       toast({
         title: "Bulk Deletion Failed",
         description: err.message,
         variant: "destructive",
       });
+      fetchSpareParts();
     }
   };
 
