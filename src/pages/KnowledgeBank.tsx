@@ -20,6 +20,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { upload as imagekitUpload } from '@imagekit/react'; // Corrected import for upload utility
 import { Copy } from 'lucide-react'; // Import Copy icon
 import { cn } from '../lib/utils'; // Import cn for conditional classnames
+import { AppShell } from '@/components/layout/AppShell';
 
 // Manually define types to bypass TypeScript caching issues
 interface KnowledgeEntry {
@@ -580,35 +581,19 @@ const KnowledgeBank: React.FC = () => {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted/30">
-      <header className="sticky top-0 z-40 border-b border-border/60 bg-card/80 backdrop-blur-lg supports-[backdrop-filter]:bg-card/60">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/60 shadow-lg shadow-primary/20">
-                <BookOpen className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <div className="leading-tight">
-                <h1 className="text-xl font-bold tracking-tight text-foreground">Knowledge Bank</h1>
-                <p className="text-xs text-muted-foreground">
-                  {filteredKnowledgeEntries.length} {filteredKnowledgeEntries.length === 1 ? 'entry' : 'entries'}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Button onClick={() => window.location.href = '/'} variant="ghost" size="sm">
-                Home
-              </Button>
-              <Button onClick={handleCreateNewEntry} size="sm" className="gap-2 shadow-sm">
-                <Plus className="h-4 w-4" /> New Entry
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
+  const headerActions = (
+    <Button onClick={handleCreateNewEntry} size="sm" className="gap-2 shadow-sm">
+      <Plus className="h-4 w-4" /> <span className="hidden sm:inline">New Entry</span>
+    </Button>
+  );
 
-      <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  return (
+    <AppShell
+      title="Knowledge Bank"
+      subtitle={`${filteredKnowledgeEntries.length} ${filteredKnowledgeEntries.length === 1 ? 'entry' : 'entries'}`}
+      actions={headerActions}
+    >
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Search Bar */}
         <div className="relative mb-6 max-w-xl">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -712,7 +697,7 @@ const KnowledgeBank: React.FC = () => {
             ))}
           </div>
         )}
-      </main>
+      </div>
 
       {/* New Entry Dialog */}
       <Dialog open={isNewEntryDialogOpen} onOpenChange={setIsNewEntryDialogOpen} >
@@ -1044,7 +1029,7 @@ const KnowledgeBank: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </AppShell>
   );
 };
 

@@ -12,6 +12,7 @@ import ExportToPdfButton from "@/components/spare-parts/ExportToPdfButton";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Package, TrendingUp, LayoutList, PieChart as PieChartIcon } from 'lucide-react';
 import RecordUsageDialog from "@/components/spare-parts/RecordUsageDialog";
+import { AppShell } from '@/components/layout/AppShell';
 
 interface SparePart {
   id: string;
@@ -420,6 +421,7 @@ const SpareParts = () => {
   }
 
   return (
+    <AppShell title="Spare Parts" subtitle="CNC inventory & usage">
     <div className="container mx-auto py-8">
       <Card>
         <CardHeader>
@@ -685,6 +687,7 @@ const SpareParts = () => {
         />
       )}
     </div>
+    </AppShell>
   );
 };
 

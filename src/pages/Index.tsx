@@ -15,6 +15,7 @@ import { BookOpen, Wrench } from 'lucide-react'; // Import BookOpen and Wrench i
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 // Components
+import { AppShell } from '@/components/layout/AppShell';
 import StatsCard from '@/components/dashboard/StatsCard';
 import NewRecordDialog from '@/components/records/NewRecordDialog';
 import RecordsList from '@/components/records/RecordsList';
@@ -221,85 +222,35 @@ const Index = () => {
     );
   }
 
+  const headerActions = (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button size="sm" className="gap-2 shadow-sm">
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Actions</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem asChild>
+            <NewRecordDialog categories={categories} onRecordCreated={fetchData} />
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <ExportButtons records={filteredRecords} />
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {overdueFollowUpsCount > 0 && (
+        <Badge variant="destructive" className="rounded-full">
+          {overdueFollowUpsCount} overdue
+        </Badge>
+      )}
+    </>
+  );
+
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border/60 bg-card/80 backdrop-blur-lg supports-[backdrop-filter]:bg-card/60 text-card-foreground">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="flex flex-col sm:flex-row items-start sm:items-center justify-between h-auto sm:h-16 py-3 sm:py-0 gap-3"
-          >
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-primary/60 shadow-lg shadow-primary/20">
-                <Database className="h-5 w-5 text-primary-foreground" />
-              </div>
-              <div className="leading-tight">
-                <h1 className="text-xl font-bold tracking-tight text-foreground">Dashboard</h1>
-                <p className="hidden sm:block text-xs text-muted-foreground">Welcome back, {user?.email}</p>
-              </div>
-            </div>
-
-            <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-              <Button variant="ghost" size="sm" onClick={() => navigate('/knowledge-bank')} className="gap-2">
-                <BookOpen className="h-4 w-4" />
-                <span className="hidden md:inline">Knowledge Bank</span>
-              </Button>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/spare-parts')} className="gap-2">
-                <Wrench className="h-4 w-4" />
-                <span className="hidden md:inline">Spare Parts</span>
-              </Button>
-
-              <div className="h-6 w-px bg-border mx-1 hidden sm:block" />
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" className="gap-2 shadow-sm">
-                    <Plus className="h-4 w-4" />
-                    Actions
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem asChild>
-                    <NewRecordDialog categories={categories} onRecordCreated={fetchData} />
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <ExportButtons records={filteredRecords} />
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <ThemeToggle />
-
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="gap-2 relative text-foreground rounded-full">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted">
-                      <User className="h-4 w-4" />
-                    </div>
-                    <span className="hidden lg:inline max-w-[160px] truncate">{user?.email}</span>
-                    {overdueFollowUpsCount > 0 && (
-                      <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 min-w-5 px-1 text-xs rounded-full flex items-center justify-center">
-                        {overdueFollowUpsCount}
-                      </Badge>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={handleSignOut}>
-                    <LogOut className="h-4 w-4 mr-2 text-destructive-foreground" />
-                    Sign out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </motion.div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <AppShell title="Dashboard" subtitle={`Welcome back, ${user?.email}`} actions={headerActions}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Search Bar */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -455,7 +406,7 @@ const Index = () => {
             </TabsContent>
           </Tabs>
         </motion.div>
-      </main>
+      </div>
       {/* Edit Record Dialog */}
       <EditRecordDialog
         record={editingRecord}
@@ -480,7 +431,7 @@ const Index = () => {
         onOpenChange={setRecordDetailDialogOpen}
         followUps={followUps}
       />
-    </div>
+    </AppShell>
   );
 }
 
