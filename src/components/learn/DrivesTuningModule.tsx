@@ -222,7 +222,7 @@ function VFDModule() {
       { m: 'eco',       label: 'ECO (energy saving)',  color: '#c084fc' },
     ];
 
-    curves.forEach(({ m, color }) => {
+    curves.forEach(({ m, color, label }) => {
       const isActive = m === mode;
       ctx.strokeStyle = isActive ? color : color + '30';
       ctx.lineWidth = isActive ? 2.5 : 1;
