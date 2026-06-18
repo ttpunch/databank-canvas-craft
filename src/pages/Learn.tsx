@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AppShell } from '@/components/layout/AppShell';
 import BICOModule from '@/components/learn/BICOModule';
 import PLCFieldbusModule from '@/components/learn/PLCFieldbusModule';
-import { Zap, Cpu, ChevronRight } from 'lucide-react';
+import DrivesTuningModule from '@/components/learn/DrivesTuningModule';
+import { Zap, Cpu, Gauge, ChevronRight } from 'lucide-react';
 
 const modules = [
   {
@@ -23,6 +24,14 @@ const modules = [
     icon: Cpu,
     color: '#34d399',
     component: PLCFieldbusModule,
+  },
+  {
+    id: 'tuning',
+    title: 'Drive Tuning',
+    subtitle: 'VFD · vector FOC · servo · DC drive · interactive response simulators',
+    icon: Gauge,
+    color: '#fbbf24',
+    component: DrivesTuningModule,
   },
 ];
 
@@ -106,7 +115,7 @@ export default function Learn() {
                 <div className="grid gap-3 sm:grid-cols-3">
                   {[
                     { title: 'Drives & Motors', sub: 'AC theory · PWM · SINAMICS family' },
-                    { title: 'Control Modes', sub: 'V/f · vector · servo · FOC' },
+                    { title: 'CNC — Siemens 840D', sub: 'Alarms · PLC DBs · axis commissioning' },
                     { title: 'Safety Functions', sub: 'STO · SS1 · SLS · SOS · faults' },
                   ].map(m => (
                     <div key={m.title} className="rounded-xl border border-dashed border-border/40 bg-muted/10 p-4 opacity-60">
