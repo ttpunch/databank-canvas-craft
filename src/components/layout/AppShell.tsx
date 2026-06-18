@@ -15,7 +15,7 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
-import { Database, LayoutDashboard, BookOpen, Wrench, LogOut, User } from 'lucide-react';
+import { Database, LayoutDashboard, BookOpen, Wrench, LogOut, User, GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/ThemeToggle';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -26,6 +26,7 @@ const nav = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard },
   { to: '/knowledge-bank', label: 'Knowledge Bank', icon: BookOpen },
   { to: '/spare-parts', label: 'Spare Parts', icon: Wrench },
+  { to: '/learn', label: 'SINAMICS Learn', icon: GraduationCap },
 ];
 
 interface AppShellProps {
