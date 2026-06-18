@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
-import { Plus, Upload as LucideUpload, FileText, Image as ImageIcon, XCircle, ChevronDown, Check, Search, MoreHorizontal, Edit, Trash } from 'lucide-react';
+import { Plus, Upload as LucideUpload, FileText, Image as ImageIcon, XCircle, ChevronDown, Check, Search, MoreHorizontal, Edit, Trash, BookOpen } from 'lucide-react';
 import RichTextEditor from '@/components/knowledge-bank/RichTextEditor';
 import { IMAGEKIT_PUBLIC_KEY, IMAGEKIT_URL_ENDPOINT, AUTHENTICATION_ENDPOINT } from '@/integrations/imagekit/client';
 import { useToast } from '@/hooks/use-toast';
@@ -75,11 +75,13 @@ interface HighlightTextProps {
   highlight: string;
 }
 
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const HighlightText: React.FC<HighlightTextProps> = ({ text, highlight }) => {
   if (!text) return null;
   if (!highlight.trim()) return <>{text}</>;
 
-  const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+  const parts = text.split(new RegExp(`(${escapeRegex(highlight)})`, 'gi'));
   return (
     <>
       {parts.map((part, i) =>
