@@ -201,12 +201,16 @@ const Index = () => {
     setRescheduleDialogOpen(true);
   }
 
-  const filteredRecords = records.filter(record =>
-    record.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    record.description?.replace(/<[^>]*>/g, '').toLowerCase().includes(searchQuery.toLowerCase()) || // Include description with HTML stripped
-    record.category?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    record.notes_history?.some(note => note.content.toLowerCase().includes(searchQuery.toLowerCase())) // Include notes history
-  );
+  const filteredRecords = records.filter(record => {
+    const q = searchQuery.toLowerCase();
+    if (!q) return true;
+    return (
+      record.title?.toLowerCase().includes(q) ||
+      record.description?.replace(/<[^>]*>/g, '').toLowerCase().includes(q) ||
+      record.category?.toLowerCase().includes(q) ||
+      record.notes_history?.some((note: any) => typeof note?.content === 'string' && note.content.toLowerCase().includes(q))
+    );
+  });
 
   // Redirect to auth if not authenticated
   if (!user && !loading) {

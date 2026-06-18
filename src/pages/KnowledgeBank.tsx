@@ -75,11 +75,13 @@ interface HighlightTextProps {
   highlight: string;
 }
 
+const escapeRegex = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const HighlightText: React.FC<HighlightTextProps> = ({ text, highlight }) => {
   if (!text) return null;
   if (!highlight.trim()) return <>{text}</>;
 
-  const parts = text.split(new RegExp(`(${highlight})`, 'gi'));
+  const parts = text.split(new RegExp(`(${escapeRegex(highlight)})`, 'gi'));
   return (
     <>
       {parts.map((part, i) =>
